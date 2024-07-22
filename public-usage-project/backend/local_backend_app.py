@@ -2,165 +2,135 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
-import json
-import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
 
-
-
-
 @app.route('/get_hourly_usage', methods=['GET'])
-# Route for Hourly Usage data
 def get_hourly_submission_data():
     """
-        Route for hourly usage data requests.
+    Route for hourly usage data requests.
 
-        Args: N/A
+    Args: N/A
 
-        Returns: JSON containing either an error or combined data from the sheet.
+    Returns: 
+        JSON needed for frontend bokeh plotting,
+        JSON Error in the case something fails. 
     """
-    try:
-        query = "SELECT * FROM hourlyUsage"
+    try:        
         connection = connect_to_database()
-
-        results = extract_from_database(connection, query, {
-            "hour": [],
-            "node1": []
-        })
-        connection.close()
-
-        return jsonify(results)
-
+        results = extract_from_database(connection, "hourly_connection")
     except Exception as e:
-        return {'error': str(e)}, 500
+        return jsonify({'error': str(e)}), 502
+    finally:
+        if connection.is_connected():
+            connection.close()
 
-
+    return jsonify(results)
 
 
 @app.route('/get_monthly_submissions', methods=['GET'])
-
 def get_monthly_submission_data():
     """
-        Route for monthly submission data requests.
+    Route for monthly submission data requests.
 
-        Args: N/A
+    Args: N/A
 
-        Returns: JSON containing either an error or combined data from the sheet.
+    Returns:  
+        JSON needed for frontend bokeh plotting,
+        JSON Error in the case something fails. 
     """
     try:
-        query = "SELECT * FROM monthlySubmissions"
         connection = connect_to_database()
-
-        results = extract_from_database(connection, query, {
-            "month": [],
-            "submissions": [],
-            "historical_delta": []
-        })
-        connection.close()
-
-        return jsonify(results)
-
+        results = extract_from_database(connection, "monthly_submission")
     except Exception as e:
-        return {'error': str(e)}, 500
+        return jsonify({'error': str(e)}), 502
+    finally:
+        if connection.is_connected():
+            connection.close()
 
-
+    return jsonify(results)
 
 
 @app.route('/get_monthly_downloads', methods=['GET'])
 def get_monthly_downloads_data():
     """
-        Route for monthly download data requests.
+    Route for monthly download data requests.
 
-        Args: N/A
+    Args: N/A
 
-        Returns: JSON containing either an error or combined data from the sheet.
+    Returns: 
+        JSON needed for frontend bokeh plotting,
+        JSON Error in the case something fails. 
     """
     try:
-        query = "SELECT * FROM monthlyDownloads"
         connection = connect_to_database()
-
-        results = extract_from_database(connection, query, {
-            "month": [],
-            "downloads": []
-        })
-        connection.close()
-
-        return jsonify(results)
-
+        results = extract_from_database(connection, "monthly_downloads")
     except Exception as e:
-        return {'error': str(e)}, 500
+        return jsonify({'error': str(e)}), 502
+    finally:
+        if connection.is_connected():
+            connection.close()
 
-
+    return jsonify(results)
 
 
 def connect_to_database():
     """
-        Establishes and returns a connection to the statistics database.
+    Establishes and returns a connection to the statistics database.
 
-        Args: N/A
+    Args: N/A
 
-        Returns: 
-            mySQL connector that will need to be closed outside of the function.
-            An error, should one occur
+    Returns: 
+        connection: mySQL connector that will need to be closed outside of the function.
+    
+    Raises an exception in the case the database is unreachable. 
     """
-    connection = None
     try:
-        # Predefined details to database we know we'll be getting statistics from.
+        #TODO: fit secret manager onto the connector. 
         connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="my-secret-pw",
-            database="test_db"
+            host='localhost',
+            user='root',
+            password='my-secret-pw',
+            database='test_db'
         )
         print("Connected to database successfully.")
+        return connection
     except Error as err:
         print(f"Error: '{err}'")
-
-    return connection
-
+        raise Exception("Failed to connect to the database.")
 
 
-def extract_from_database(connection, query, result):
+def extract_from_database(connection, task_type):
     """
-        Populates the given dict with formatted doc data.
+    Populates the given dict with formatted doc data.
 
-        Args: 
-            connection: an existing mySQL connection to the database.
-            query: an SQL query to be executed on a cursor.
-            result: a python dict to contain whatever is returned from the query,
+    Args: 
+        connection: an existing mySQL connection to the database.
+        task_type: a string specifying which task type we're to fetch from
 
-        Returns:
-            Nothing, but output from query is written into result. 
+    Returns:
+        results: A JSON file originating from the database, already formatted for frontend use
     """
-    cursor = connection.cursor()
-
     try:
+        # specifically, we want the json located at the results column of the corresponding task row
+        query = "SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s"
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(query, (task_type,))
 
-        # Set buffered to False for streaming
-        cursor = connection.cursor(buffered=False)
+        # fetch one row
+        result = cursor.fetchone()
 
-        # Execute the query
-        cursor.execute(query)
+        # if no result found, return an empty JSON
+        if not result:
+            return {}
 
-        # Fetch and process rows one at a time
-        for row in cursor:
-            curr_Item = json.loads(row[1])
-            for key in curr_Item:
-                if key in curr_Item:
-                    # If the item happens to be in month format, have pandas format it.
-                    if key == "month" or key == "hour":
-                        result[key].append(pd.to_datetime(curr_Item[key]))
-                    # If it is not in date format it's most likely a number statistic. Keep it as an integer.
-                    else:
-                        result[key].append(int(curr_Item[key]))
-
-        # Close down the cursor after all is read.
-        cursor.close()
         return result
     except Error as err:
         print(f"Error: '{err}'")
+        raise
+    finally:
+        cursor.close()
 
 
 if __name__ == '__main__':
