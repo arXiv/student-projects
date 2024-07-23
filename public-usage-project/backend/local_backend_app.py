@@ -1,7 +1,13 @@
+"""
+    os module provides a method for this app to read in environment variables, 
+    specifically to get user info for accessing the database.
+"""
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
+
 
 app = Flask(__name__)
 CORS(app)
@@ -17,7 +23,7 @@ def get_hourly_submission_data():
         JSON needed for frontend bokeh plotting,
         JSON Error in the case something fails. 
     """
-    try:        
+    try:
         connection = connect_to_database()
         results = extract_from_database(connection, "hourly_connection")
     except Exception as e:
@@ -87,16 +93,17 @@ def connect_to_database():
     Raises an exception in the case the database is unreachable. 
     """
     try:
-        #TODO: fit secret manager onto the connector. 
+        # gather credentials to login from environment variables. 
         connection = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='my-secret-pw',
-            database='test_db'
+            host = '34.135.66.90',
+            user = os.getenv("example-db-user"),
+            password = os.getenv("example-db-password"),
+            database = 'test_db'
         )
         print("Connected to database successfully.")
         return connection
     except Error as err:
+        connection.close()
         print(f"Error: '{err}'")
         raise Exception("Failed to connect to the database.")
 
@@ -112,6 +119,7 @@ def extract_from_database(connection, task_type):
     Returns:
         results: A JSON file originating from the database, already formatted for frontend use
     """
+    cursor = None
     try:
         # specifically, we want the json located at the results column of the corresponding task row
         query = "SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s"
@@ -130,7 +138,8 @@ def extract_from_database(connection, task_type):
         print(f"Error: '{err}'")
         raise
     finally:
-        cursor.close()
+        if cursor is not None:
+            cursor.close()
 
 
 if __name__ == '__main__':
