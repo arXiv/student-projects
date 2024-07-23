@@ -1,13 +1,8 @@
-"""
-    os module provides a method for this app to read in environment variables, 
-    specifically to get user info for accessing the database.
-"""
 import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
-
 
 app = Flask(__name__)
 CORS(app)
@@ -23,13 +18,17 @@ def get_hourly_submission_data():
         JSON needed for frontend bokeh plotting,
         JSON Error in the case something fails. 
     """
+    
+    connection = None
     try:
         connection = connect_to_database()
         results = extract_from_database(connection, "hourly_connection")
     except Exception as e:
+        if connection is not None and connection.is_connected():
+            connection.close()
         return jsonify({'error': str(e)}), 502
     finally:
-        if connection.is_connected():
+        if connection is not None and connection.is_connected():
             connection.close()
 
     return jsonify(results)
@@ -46,13 +45,14 @@ def get_monthly_submission_data():
         JSON needed for frontend bokeh plotting,
         JSON Error in the case something fails. 
     """
+    connection = None
     try:
         connection = connect_to_database()
         results = extract_from_database(connection, "monthly_submission")
     except Exception as e:
         return jsonify({'error': str(e)}), 502
     finally:
-        if connection.is_connected():
+        if connection is not None and connection.is_connected():
             connection.close()
 
     return jsonify(results)
@@ -69,13 +69,14 @@ def get_monthly_downloads_data():
         JSON needed for frontend bokeh plotting,
         JSON Error in the case something fails. 
     """
+    connection = None
     try:
         connection = connect_to_database()
         results = extract_from_database(connection, "monthly_downloads")
     except Exception as e:
         return jsonify({'error': str(e)}), 502
     finally:
-        if connection.is_connected():
+        if connection is not None and connection.is_connected():
             connection.close()
 
     return jsonify(results)
@@ -92,20 +93,34 @@ def connect_to_database():
     
     Raises an exception in the case the database is unreachable. 
     """
+    connection = None
     try:
-        # gather credentials to login from environment variables. 
+        # debugging connection you can swap in and out with your own local credentials.
         connection = mysql.connector.connect(
-            host = '34.135.66.90',
+            host = '127.0.0.1',
+            user = 'root',
+            password = 'my-secret-pw',
+            database = 'test_db'
+        )
+
+        # gather credentials to login from environment variables. 
+        """
+        uncomment me when you want to test with environment variables.
+        connection = mysql.connector.connect(
+            host = '127.0.0.1',
             user = os.getenv("example-db-user"),
             password = os.getenv("example-db-password"),
             database = 'test_db'
         )
+        """
         print("Connected to database successfully.")
         return connection
     except Error as err:
-        connection.close()
         print(f"Error: '{err}'")
-        raise Exception("Failed to connect to the database.")
+        raise Exception("Failed to connect to the database.") from err
+    finally:
+        if connection is not None and connection.is_connected():
+            connection.close()
 
 
 def extract_from_database(connection, task_type):
@@ -141,6 +156,6 @@ def extract_from_database(connection, task_type):
         if cursor is not None:
             cursor.close()
 
-
 if __name__ == '__main__':
     app.run(debug=True)
+
