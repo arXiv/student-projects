@@ -2,7 +2,7 @@
 FROM python:3.10
 
 # Set the working directory to /app
-WORKDIR /app/backend
+WORKDIR /app
 
 # copy the requirements file used for dependencies
 COPY . /app
@@ -15,4 +15,4 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 COPY . .
 
 # Run app.py when the container launches
-ENTRYPOINT ["python", "local_backend_app.py"]
+ENTRYPOINT ["python", "app.py"]
