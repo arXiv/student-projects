@@ -1,13 +1,13 @@
 import os
-from flask import Flask, jsonify
+from flask import Blueprint, jsonify
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 
-app = Flask(__name__)
-CORS(app)
+api = Blueprint('api', __name__)
+CORS(api)
 
-@app.route('/get_hourly_usage', methods=['GET'])
+@api.route('/get_hourly_usage', methods=['GET'])
 def get_hourly_submission_data():
     """
     Route for hourly usage data requests.
@@ -34,7 +34,7 @@ def get_hourly_submission_data():
     return jsonify(results)
 
 
-@app.route('/get_monthly_submissions', methods=['GET'])
+@api.route('/get_monthly_submissions', methods=['GET'])
 def get_monthly_submission_data():
     """
     Route for monthly submission data requests.
@@ -58,7 +58,7 @@ def get_monthly_submission_data():
     return jsonify(results)
 
 
-@app.route('/get_monthly_downloads', methods=['GET'])
+@api.route('/get_monthly_downloads', methods=['GET'])
 def get_monthly_downloads_data():
     """
     Route for monthly download data requests.
@@ -72,7 +72,7 @@ def get_monthly_downloads_data():
     connection = None
     try:
         connection = connect_to_database()
-        results = extract_from_database(connection, "monthly_downloads")
+        results = extract_from_database(connection, "monthly_download")
     except Exception as e:
         return jsonify({'error': str(e)}), 502
     finally:
@@ -100,27 +100,16 @@ def connect_to_database():
             host = '127.0.0.1',
             user = 'root',
             password = 'my-secret-pw',
-            database = 'test_db'
+            database = 'test_db',
+            port = '3306'
         )
 
-        # gather credentials to login from environment variables. 
-        """
-        uncomment me when you want to test with environment variables.
-        connection = mysql.connector.connect(
-            host = '127.0.0.1',
-            user = os.getenv("example-db-user"),
-            password = os.getenv("example-db-password"),
-            database = 'test_db'
-        )
-        """
         print("Connected to database successfully.")
         return connection
     except Error as err:
         print(f"Error: '{err}'")
         raise Exception("Failed to connect to the database.") from err
-    finally:
-        if connection is not None and connection.is_connected():
-            connection.close()
+
 
 
 def extract_from_database(connection, task_type):
@@ -138,6 +127,7 @@ def extract_from_database(connection, task_type):
     try:
         # specifically, we want the json located at the results column of the corresponding task row
         query = "SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s"
+        print(query, (task_type))
         cursor = connection.cursor(dictionary=True)
         cursor.execute(query, (task_type,))
 
@@ -146,7 +136,7 @@ def extract_from_database(connection, task_type):
 
         # if no result found, return an empty JSON
         if not result:
-            return {}
+            return {"error": "looks like the database is empty right now."}
 
         return result
     except Error as err:
@@ -155,7 +145,3 @@ def extract_from_database(connection, task_type):
     finally:
         if cursor is not None:
             cursor.close()
-
-if __name__ == '__main__':
-    app.run(debug=True)
-
