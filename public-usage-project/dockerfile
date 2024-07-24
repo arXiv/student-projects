@@ -2,9 +2,10 @@
 FROM python:3.10
 
 # Set the working directory to /app
-WORKDIR /app
+WORKDIR /app/backend
 
 # copy the requirements file used for dependencies
+COPY . /app
 COPY requirements.txt .
 
 # Install any needed packages specified in requirements.txt

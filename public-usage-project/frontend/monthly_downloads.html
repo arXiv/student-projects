@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Monthly Downloads</title>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.3.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-2.4.3.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.4.3.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.3.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-2.4.3.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-api-2.4.3.min.js"></script>
+</head>
+<body>
+    <div id="myplot-downloads"></div>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch('http://127.0.0.1:5000/get_monthly_downloads')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // console.log('Fetched data:', data);
+
+                    const barData = [['Month', 'Downloads']];
+                    for (let i = 0; i < data.month.length; i++) {
+                        barData.push([new Date(data.month[i]).toISOString().substring(0, 7), data.downloads[i]]);
+                    }
+
+                    // console.log('Bar data:', barData);
+
+                    const source = new Bokeh.ColumnDataSource({
+                        data: {
+                            month: data.month.map(date => new Date(date).toISOString().substring(0, 7)),
+                            downloads: data.downloads
+                        }
+                    });
+
+                    const p = new Bokeh.Plotting.figure({
+                        width: 1000,
+                        height: 500,
+                        title: "Monthly Downloads",
+                        x_axis_label: 'Month',
+                        y_axis_label: 'Downloads',
+                        x_range: barData.slice(1).map(item => item[0]),
+                        tools: "pan,wheel_zoom,box_zoom,reset,save"
+                    });
+
+                    p.vbar({
+                        x: { field: 'month' },
+                        top: { field: 'downloads' },
+                        width: 0.9,
+                        source: source
+                    });
+
+                    // Remove grid lines
+                    p.xgrid[0].visible = false;
+                    p.ygrid[0].visible = false;
+
+                    // Add hover tool
+                    const hover = new Bokeh.HoverTool({
+                        tooltips: [
+                            ["Month", "@month"],
+                            ["Downloads", "@downloads"]
+                        ]
+                    });
+                    p.add_tools(hover);
+
+                    // Disable scientific notation on y-axis
+                    p.yaxis[0].formatter = new Bokeh.NumeralTickFormatter({ format: "0a" });
+
+                    Bokeh.Plotting.show(p, document.getElementById('myplot-downloads'));
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+        });
+    </script>
+</body>
+</html>
