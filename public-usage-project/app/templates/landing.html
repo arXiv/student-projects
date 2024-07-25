@@ -10,15 +10,24 @@
     Simple redirector page.
   </h3>
   <p>Click the links to go the graphs directly:<br/>
-    <a href="http://127.0.0.1:5000/hourly_usage" target="_blank">hourly usage graph</a><br/>
-    <a href="http://127.0.0.1:5000/monthly_downloads" target="_blank">monthly downloads graph</a><br/>
-    <a href="http://127.0.0.1:5000/monthly_submissions" target="_blank">monthly submissions graph</a>
+    <a href="{{ url_for('main.render_hourly_usage') }}">Hourly Usage Graphs</a><br/>
+    <a href="{{ url_for('main.render_monthly_downloads') }}">Monthly Downloads Graphs</a><br/>
+    <a href="{{ url_for('main.render_monthly_submissions') }}">Monthly Submissions Graphs</a><br/>
   </p>
-  <p>Or, test the API results here::<br/>
-    <a href="http://127.0.0.1:5000/api/get_hourly_usage" target="_blank">hourly usage fetch</a><br/>
-    <a href="http://127.0.0.1:5000/api/get_monthly_downloads" target="_blank">monthly downloads fetch</a><br/>
-    <a href="http://127.0.0.1:5000/api/get_monthly_submissions" target="_blank">monthly submissions fetch</a>
+  <p>Or, test the API results here:<br/>
+    <a id="api-hourly-usage" href="#">API Hourly Usage</a><br/>
+    <a id="api-monthly-submissions" href="#">API Monthly Submissions</a><br/>
+    <a id="api-monthly-downloads" href="#">API Monthly Downloads</a><br/>
   </p>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var baseUrl = window.location.origin;
+      document.getElementById("api-hourly-usage").href = baseUrl + "/api/get_hourly_usage";
+      document.getElementById("api-monthly-submissions").href = baseUrl + "/api/get_monthly_submissions";
+      document.getElementById("api-monthly-downloads").href = baseUrl + "/api/get_monthly_downloads";
+    });
+  </script>
 </body>
 
 </html>
