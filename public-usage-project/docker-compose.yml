@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    ports:
+      - "5002:5002"
+    environment:
+      DB_HOST: docker_db
+      DB_USER: root
+      DB_PASSWORD: Aa1122113169!
+      DB_NAME: my_database
+      DB_PORT: 3306
+    depends_on:
+      - docker_db
+
+  docker_db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: Aa1122113169!
+      MYSQL_DATABASE: my_database
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
