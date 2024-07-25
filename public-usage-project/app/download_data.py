@@ -53,7 +53,7 @@ def connect_to_database():
 
             user = os.getenv('example-db-user'),
 
-            password = os.getenv('example-db-user'),
+            password = os.getenv('example-db-password'),
 
             database = "test_db"
 
