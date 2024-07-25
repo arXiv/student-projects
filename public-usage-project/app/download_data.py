@@ -1,5 +1,6 @@
 import logging
 import os
+import io
 from time import sleep
 
 import csv
@@ -7,7 +8,7 @@ import json
 import requests
 
 #from google.cloud import logging as gcp_logging
-
+import pandas as pd
 import mysql.connector
 from mysql.connector import Error
 
@@ -34,8 +35,10 @@ def get_csv(url :str):
 
 # Passes in the csv with only values we are going to append
 def csv_to_json(csv_data):
-    return csv_data
-#     reader = csv.DictReader(csv_data)
+    data = pd.read_csv(io.StringIO(csv_data), sep=",")
+
+    json_data = data.to_dict(orient='list')
+
 
 
 
