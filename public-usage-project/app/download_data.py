@@ -3,8 +3,6 @@ import os
 import io
 from time import sleep
 
-import csv
-import json
 import requests
 
 #from google.cloud import logging as gcp_logging
