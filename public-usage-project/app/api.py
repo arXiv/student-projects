@@ -6,7 +6,8 @@ import mysql.connector
 from mysql.connector import Error
 
 api = Blueprint('api', __name__)
-CORS(api)
+CORS(api, resources={r"/*": {"origins": "*"}})  # Allow all origins
+
 
 @api.route('/get_hourly_usage', methods=['GET'])
 def get_hourly_submission_data():
