@@ -22,7 +22,9 @@
                     return response.json();
                 })
                 .then(data => {
-                    // console.log('Fetched data:', data);
+                    console.log('Fetched data:', data);
+
+                    console.log();
 
                     const barData = [['Hour', 'Connections']];
                     for (let i = 0; i < data.hour.length; i++) {

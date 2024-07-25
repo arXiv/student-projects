@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Blueprint, jsonify
 from flask_cors import CORS
 import mysql.connector
@@ -19,19 +20,15 @@ def get_hourly_submission_data():
         JSON Error in the case something fails. 
     """
     
-    connection = None
     try:
-        connection = connect_to_database()
-        results = extract_from_database(connection, "hourly_connection")
+        results = extract_from_database("hourly_connection")
+        if results:
+            # Parse the JSON string inside the 'result' field and return it
+            processed_result = json.loads(results[0]['result'])
     except Exception as e:
-        if connection is not None and connection.is_connected():
-            connection.close()
         return jsonify({'error': str(e)}), 502
-    finally:
-        if connection is not None and connection.is_connected():
-            connection.close()
 
-    return jsonify(results)
+    return jsonify(processed_result)
 
 
 @api.route('/get_monthly_submissions', methods=['GET'])
@@ -45,17 +42,14 @@ def get_monthly_submission_data():
         JSON needed for frontend bokeh plotting,
         JSON Error in the case something fails. 
     """
-    connection = None
     try:
-        connection = connect_to_database()
-        results = extract_from_database(connection, "monthly_submission")
+        results = extract_from_database("monthly_submission")
+        if results:
+            processed_result = json.loads(results[0]['result'])
     except Exception as e:
         return jsonify({'error': str(e)}), 502
-    finally:
-        if connection is not None and connection.is_connected():
-            connection.close()
 
-    return jsonify(results)
+    return jsonify(processed_result)
 
 
 @api.route('/get_monthly_downloads', methods=['GET'])
@@ -69,50 +63,17 @@ def get_monthly_downloads_data():
         JSON needed for frontend bokeh plotting,
         JSON Error in the case something fails. 
     """
-    connection = None
     try:
-        connection = connect_to_database()
-        results = extract_from_database(connection, "monthly_download")
+        results = extract_from_database("monthly_downloads")
+        if results:
+            processed_result = json.loads(results[0]['result'])
     except Exception as e:
         return jsonify({'error': str(e)}), 502
-    finally:
-        if connection is not None and connection.is_connected():
-            connection.close()
 
-    return jsonify(results)
+    return jsonify(processed_result)
 
 
-def connect_to_database():
-    """
-    Establishes and returns a connection to the statistics database.
-
-    Args: N/A
-
-    Returns: 
-        connection: mySQL connector that will need to be closed outside of the function.
-    
-    Raises an exception in the case the database is unreachable. 
-    """
-    connection = None
-    try:
-        # debugging connection you can swap in and out with your own local credentials.
-        connection = mysql.connector.connect(
-            host = '127.0.0.1',
-            user = 'root',
-            password = 'my-secret-pw',
-            database = 'test_db',
-            port = '3306'
-        )
-
-        print("Connected to database successfully.")
-        return connection
-    except Error as err:
-        print(f"Error: '{err}'")
-        raise Exception("Failed to connect to the database.") from err
-
-
-
-def extract_from_database(connection, task_type):
+def extract_from_database(task_type):
     """
     Populates the given dict with formatted doc data.
 
@@ -125,14 +86,22 @@ def extract_from_database(connection, task_type):
     """
     cursor = None
     try:
+        
         # specifically, we want the json located at the results column of the corresponding task row
-        query = "SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s"
+        query = "SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s ORDER BY created_time DESC LIMIT 1"
         print(query, (task_type))
+
+        connection = mysql.connector.connect(
+            host = '127.0.0.1',
+            user = 'root',
+            password = 'your_password',
+            database = 'your_dbname',
+            port = '3306'
+        )
         cursor = connection.cursor(dictionary=True)
         cursor.execute(query, (task_type,))
 
-        # fetch one row
-        result = cursor.fetchone()
+        result = cursor.fetchall()
 
         # if no result found, return an empty JSON
         if not result:
