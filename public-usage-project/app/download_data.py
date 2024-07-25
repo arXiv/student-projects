@@ -2,8 +2,9 @@ import logging
 import os
 import io
 from time import sleep
-
+import json
 import requests
+from datetime import datetime
 
 #from google.cloud import logging as gcp_logging
 import pandas as pd
@@ -198,3 +199,51 @@ def daily_data(todays_date):
             return
 
         write_to_database("arXiv_stats_hourly", daily_json_data, connection)
+
+
+def insert_into_database(task_type, json_data, status=0):
+    """
+    Inserts a JSON file into the database.
+
+    Args:
+        task_type: a string specifying which task type we're to insert into, like hourly_connection, monthly_downloads and monthly_submission
+        json_data: a dictionary containing the JSON data to insert
+        status: an integer indicating the status (0-success, 1-fail)
+
+    Returns:
+        message: a success or error message
+    """
+    cursor = None
+    try:
+        # Prepare the insert query
+        query = "INSERT INTO arXiv_stats_extraction_task (task_type, status, result, created_time) VALUES (%s, %s, %s, %s)"
+        current_time = datetime.now()
+        print(query, (task_type, status, json.dumps(json_data), current_time))
+
+        connection = mysql.connector.connect(
+            host='127.0.0.1',
+            user='root',
+            password='your_password',
+            database='your_dbname',
+            port='3306'
+        )
+        cursor = connection.cursor()
+
+        # Execute the insert query
+        cursor.execute(query, (task_type, status, json.dumps(json_data), current_time))
+        connection.commit()
+
+        return {"message": "Data inserted successfully."}
+    except Error as err:
+        print(f"Error: '{err}'")
+        raise
+    finally:
+        if cursor is not None:
+            cursor.close()
+
+# Example usage
+# result = extract_from_database('hourly_connection')
+# print(result)
+# new_data = {"hour": ["2024-07-19T00:00:00Z", "2024-07-19T01:00:00Z", "2024-07-19T02:00:00Z", "2024-07-19T03:00:00Z", "2024-07-19T04:00:00Z", "2024-07-19T05:00:00Z", "2024-07-19T06:00:00Z", "2024-07-19T07:00:00Z", "2024-07-19T08:00:00Z"], "node1": [1187507, 1159321, 1312453, 1464232, 1425941, 1404030, 1144244, 1131614, 1246767]}
+# insert_response = insert_into_database('hourly_connection', new_data)
+# print(insert_response)
