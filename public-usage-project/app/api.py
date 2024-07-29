@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
+from dotenv import load_dotenv
 
 api = Blueprint('api', __name__)
 CORS(api, resources={r"/*": {"origins": "*"}})  # Allow all origins
@@ -77,28 +78,33 @@ def get_monthly_downloads_data():
 def extract_from_database(task_type):
     """
     Populates the given dict with formatted doc data.
+    Assumes, currently, that all info relating to the specific task is under 1 aggregated JSON. 
 
     Args: 
-        connection: an existing mySQL connection to the database.
         task_type: a string specifying which task type we're to fetch from
 
     Returns:
         results: A JSON file originating from the database, already formatted for frontend use
+                 Contents potentially empty, should the task_type it is requested to search (most likely hours)
+                 is empty. 
     """
     cursor = None
     try:
         
         # specifically, we want the json located at the results column of the corresponding task row
         query = "SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s ORDER BY created_time DESC LIMIT 1"
-        print(query, (task_type))
-
+        
+        load_dotenv()
+        
+        # Establish connection using env variables
         connection = mysql.connector.connect(
-            host = '127.0.0.1',
-            user = 'root',
-            password = 'your_password',
-            database = 'your_dbname',
+            host = os.environ['DB_HOST'],
+            user = os.environ['DB_USER'],
+            password = os.environ['DB_PASSWORD'],
+            database = os.environ['DB_NAME'],
             port = '3306'
         )
+        
         cursor = connection.cursor(dictionary=True)
         cursor.execute(query, (task_type,))
 

@@ -14,7 +14,7 @@
     <div id="myplot-submissions"></div>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            fetch('http://127.0.0.1:5002/api/get_monthly_submissions')
+            fetch(window.location.origin + "/api/get_monthly_submissions")
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
