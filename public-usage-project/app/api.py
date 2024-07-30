@@ -98,7 +98,7 @@ def extract_from_database(task_type):
         
         # Establish connection using env variables
         connection = mysql.connector.connect(
-            host = os.environ['DB_HOST'],
+            unix_socket= os.environ['DB_UNIX_SOCKET'],
             user = os.environ['DB_USER'],
             password = os.environ['DB_PASSWORD'],
             database = os.environ['DB_NAME'],
