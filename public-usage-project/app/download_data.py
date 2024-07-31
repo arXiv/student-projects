@@ -17,13 +17,6 @@ from mysql.connector import Error
 
 
 
-
-def main():
-    client = gcp_logging.Client()
-    client.setup_logging()
-
-
-
 def get_csv(url :str):
     """Gets the CSV from the urls"""
     # 2 is currently num retries
@@ -57,7 +50,7 @@ def find_most_recent(table, is_monthly):
         table: the table we are getting the data from
 
     Returns:
-        the most recent entry
+        the most recent entry date
 
     """
 
@@ -146,6 +139,7 @@ def monthly_data():
     monthly and hourly work in the same way, download the csv,
     if it doesn't get the data nothing happens
     Otherwise splits and finds recent not added data and adds it
+
     """
 
 
@@ -227,9 +221,14 @@ def append_to_database(json_data, time_frame, table):
             port = '3306'
         )
 
+        # Query to get the data I will be changing
         query = "SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s ORDER BY created_time DESC LIMIT 1;"
         result = query.execute(query, (table,))
+
+        # Query to update the data
         query = "UPDATE arXiv_stats_extraction_task SET result = %s WHERE task_type = %s ORDER BY created_time DESC LIMIT 1;"
+
+        # What the second column is, for submission there is a third
         json_column = ''
         if(table == 'monthly_downloads'):
             json_column = 'downloads'
@@ -238,9 +237,13 @@ def append_to_database(json_data, time_frame, table):
             json_column = 'submissions'
         if(table == 'hourly_connection'):
             json_column = 'node1'
+
+        # Changing the json to include new data
         result = json.loads(result)
         result = result[time_frame].extend(json_data[time_frame])
         result = result[json_column].extend(json_data[json_column])
+
+        # Turning it back into a string and updating it
         result_str = json.dumps(result)
         query.execute(query,(result_str, table,))
 
