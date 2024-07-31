@@ -4,9 +4,8 @@ import io
 from time import sleep
 import json
 import requests
-from datetime import datetime
 
-#from google.cloud import logging as gcp_logging
+import google.cloud.logging as gcp_logging
 import pandas as pd
 import mysql.connector
 from mysql.connector import Error
@@ -15,6 +14,13 @@ from mysql.connector import Error
 #  "https://arxiv.org/stats/get_monthly_downloads",
 #  "https://arxiv.org/stats/get_monthly_submissions",
 #  "https://arxiv.org/stats/get_hourly?date=" + todays_date
+
+
+
+
+def main():
+    client = gcp_logging.Client()
+    client.setup_logging()
 
 
 
@@ -34,81 +40,69 @@ def get_csv(url :str):
 
 # Passes in the csv with only values we are going to append
 def csv_to_json(csv_data):
+    """
+    Arg: csv_data only new csv data
+    Returns: json_data as dict = json
+    """
     data = pd.read_csv(io.StringIO(csv_data), sep=",")
 
     json_data = data.to_dict(orient='list')
+    return json_data
 
 
+def find_most_recent(table, is_monthly):
+    """
+    Finds the most recent in table and gets all after from table
+    Args:
+        table: the table we are getting the data from
 
+    Returns:
+        the most recent entry
 
-def connect_to_database():
-    """use mysql and environment variables to establish connection"""
-    connection = None
+    """
 
-    try:
-
-        connection = mysql.connector.connect(
-            #arxiv-development:us-central1:example-db-1
-            host =  "127.0.0.1",
-
-            user = os.getenv('example-db-user'),
-
-            password = os.getenv('example-db-password'),
-
-            database = "test_db"
-
+    connection = mysql.connector.connect(
+            unix_socket= os.environ['DB_UNIX_SOCKET'],
+            user = os.environ['DB_USER'],
+            password = os.environ['DB_PASSWORD'],
+            database = os.environ['DB_NAME'],
+            port = '3306'
         )
 
-    except Error as err:
-        print(f"Error: '{err}'")
-
-    return connection
-
-
-
-def find_most_recent(table, connection, is_montly):
-    """Finds the most recent in table and gets all after from table"""
-
-    cursor = connection.cursor()
-    time_frame = ''
-    if is_montly:
+    time_frame = ""
+    if is_monthly:
         time_frame = "month"
     else:
-        time_frame = "hour"
+        time_frame = "hourly"
 
     try:
+        cursor = connection.cursor(dictionary=True)
         cursor.execute(
-            f"""
-            SELECT MAX({time_frame})
-            FROM {table}
-            """
-        )
-        return cursor.fetchone()
+            """SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s ORDER BY created_time DESC LIMIT 1"""
+        ,(table,))
+        result = cursor.fetchall()
+        #cursor.close()
+        date_list = json.loads(result)[time_frame]
+        return[date_list[len(date_list) - 1]]
+
 
     except Error as err:
         print(f"Error: '{err}")
         return None
 
 
-# this is the outline I was using for this function can change if you need
-def write_to_database(table, content, connection):
-    return (table,content,connection)
-    """
-    cursor = connection.cursor()
-
-    #TODO Haorun write the write command
-    try:
-
-        cursor.execute()
-        connection.commit()
-        cursor.close()
-
-    except Error as err:
-        print(f"Error: '{err}'")"""
-
-
 def split_csv_montly(csv_data, date):
-    """Gets the newest date from the database, everything after is new"""
+    """
+    Gives back only new entries that we do not have in the database for month
+    Args:
+        csv_data: string of the csv data
+        date: the most recent date str
+
+    Returns:
+        None if no new entries
+        All new entries in lines of csv file
+
+    """
     csv_data = csv_data.splitlines()
     length = len(csv_data)
     for n in range(2,length):
@@ -119,6 +113,18 @@ def split_csv_montly(csv_data, date):
 
 
 def split_csv_hourly(csv_data, date):
+    """
+    Gives back only new entries that we do not have in the database
+
+    Args:
+        csv_data: string of the csv data
+        date: the most recent date str
+
+    Returns:
+        None if no new entries
+        All new entries in lines of csv file
+
+    """
     csv_data = csv_data.splitlines()
     length = len(csv_data)
     # If len <= 3 then it's the beginning of a new day
@@ -148,7 +154,14 @@ def monthly_data():
 
     if(downloads.ok and submissions.ok):
 
-        connection = connect_to_database()
+        connection = mysql.connector.connect(
+            unix_socket= os.environ['DB_UNIX_SOCKET'],
+            user = os.environ['DB_USER'],
+            password = os.environ['DB_PASSWORD'],
+            database = os.environ['DB_NAME'],
+            port = '3306'
+        )
+        cursor = connection.cursor()
 
         # Downloads
         date = find_most_recent("arXiv_stats_monthly_downloads", connection, True)
@@ -168,82 +181,75 @@ def monthly_data():
 
         # .ok makes sure it doesn't get a 400 or above error
 
-        write_to_database("arXiv_stats_monthly_downloads",
-                            download_json_data, connection)
+        append_to_database(download_json_data, 'month', "monthly_downloads")
 
-        write_to_database("arXiv_stats_monthly_submissions",
-                            submission_json_data, connection)
-
-
-
+        append_to_database(submission_json_data, 'month', "monthly_submission")
 
 
 def daily_data(todays_date):
-    """Function for requesting the data daily and storing it"""
+    """Takes in to"""
 
 
 
     daily = get_csv("https://arxiv.org/stats/get_hourly?date=" + todays_date)
 
-
-    daily_json_data = csv_to_json(data)
-
-    connection = connect_to_database()
-
     if daily.ok:
-        date = find_most_recent("arXiv_stats_daily_downloads", connection, True)
+        date = find_most_recent("arXiv_stats_daily_downloads", True)
 
         data = split_csv_montly(daily.content.decode('utf-8'), date)
 
         if data is None:
             return
 
-        write_to_database("arXiv_stats_hourly", daily_json_data, connection)
+        daily_json_data = csv_to_json(data)
+        append_to_database(daily_json_data, 'hour', "hourly_connection" )
 
-
-def insert_into_database(task_type, json_data, status=0):
+def append_to_database(json_data, time_frame, table):
     """
-    Inserts a JSON file into the database.
-
     Args:
-        task_type: a string specifying which task type we're to insert into, like hourly_connection, monthly_downloads and monthly_submission
-        json_data: a dictionary containing the JSON data to insert
-        status: an integer indicating the status (0-success, 1-fail)
+        json_data the json data in json form
+        time_frame "month" or "hour"
+        table "hourly_connection", "monthly_downloads", "monthly_submission"
 
     Returns:
-        message: a success or error message
+        Message on success
+
     """
     cursor = None
     try:
-        # Prepare the insert query
-        query = "INSERT INTO arXiv_stats_extraction_task (task_type, status, result, created_time) VALUES (%s, %s, %s, %s)"
-        current_time = datetime.now()
-        print(query, (task_type, status, json.dumps(json_data), current_time))
+
 
         connection = mysql.connector.connect(
-            host='127.0.0.1',
-            user='root',
-            password='your_password',
-            database='your_dbname',
-            port='3306'
+            unix_socket= os.environ['DB_UNIX_SOCKET'],
+            user = os.environ['DB_USER'],
+            password = os.environ['DB_PASSWORD'],
+            database = os.environ['DB_NAME'],
+            port = '3306'
         )
-        cursor = connection.cursor()
 
-        # Execute the insert query
-        cursor.execute(query, (task_type, status, json.dumps(json_data), current_time))
-        connection.commit()
+        query = "SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s ORDER BY created_time DESC LIMIT 1;"
+        result = query.execute(query, (table,))
+        query = "UPDATE arXiv_stats_extraction_task SET result = %s WHERE task_type = %s ORDER BY created_time DESC LIMIT 1;"
+        json_column = ''
+        if(table == 'monthly_downloads'):
+            json_column = 'downloads'
+        if(table == 'monthly_submission'):
+            result = result['historical_delta'].extend(json_data['historical_delta'])
+            json_column = 'submissions'
+        if(table == 'hourly_connection'):
+            json_column = 'node1'
+        result = json.loads(result)
+        result = result[time_frame].extend(json_data[time_frame])
+        result = result[json_column].extend(json_data[json_column])
+        result_str = json.dumps(result)
+        query.execute(query,(result_str, table,))
 
+        cursor.commit()
         return {"message": "Data inserted successfully."}
+
     except Error as err:
         print(f"Error: '{err}'")
         raise
     finally:
         if cursor is not None:
             cursor.close()
-
-# Example usage
-# result = extract_from_database('hourly_connection')
-# print(result)
-# new_data = {"hour": ["2024-07-19T00:00:00Z", "2024-07-19T01:00:00Z", "2024-07-19T02:00:00Z", "2024-07-19T03:00:00Z", "2024-07-19T04:00:00Z", "2024-07-19T05:00:00Z", "2024-07-19T06:00:00Z", "2024-07-19T07:00:00Z", "2024-07-19T08:00:00Z"], "node1": [1187507, 1159321, 1312453, 1464232, 1425941, 1404030, 1144244, 1131614, 1246767]}
-# insert_response = insert_into_database('hourly_connection', new_data)
-# print(insert_response)
