@@ -4,7 +4,7 @@ from app import create_app, download_data
 
 from datetime import datetime, timezone, timedelta
 import time
-import threading
+import multiprocessing
 import os
 import logging
 
@@ -30,7 +30,8 @@ if __name__ == '__main__':
     client = gcp_logging.Client()
     client.setup_logging()
     logging.critical("SETUP LOGGING")
-    t1 = threading.Thread(target=check_update, args=(last_run_month,last_run_hour,))
-    t1.start()
+    p1 = multiprocessing.Process(target=check_update, args=(last_run_month,last_run_hour,))
+    p1.start()
     create_app().run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
+
 
