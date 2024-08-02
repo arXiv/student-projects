@@ -11,7 +11,7 @@ import logging
 
 
 def check_update(last_run_month, last_run_hour):
-    logging.warn("Got into thread")
+    print("Got into thread")
     while(True):
         curr_time = datetime.now(timezone(timedelta(hours=-4)))
 
@@ -27,9 +27,9 @@ def check_update(last_run_month, last_run_hour):
 if __name__ == '__main__':
     last_run_month = datetime(2024,6,1)
     last_run_hour = datetime(2024, 7,31,0)
+    print("BEFORE P1")
     client = gcp_logging.Client()
     client.setup_logging()
-    logging.critical("SETUP LOGGING")
     p1 = multiprocessing.Process(target=check_update, args=(last_run_month,last_run_hour,))
     p1.start()
     create_app().run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
