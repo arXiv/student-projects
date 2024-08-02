@@ -5,6 +5,7 @@ from app import create_app, download_data
 from datetime import datetime, timezone, timedelta
 import time
 import threading
+import os
 
 
 
@@ -28,6 +29,5 @@ if __name__ == '__main__':
     client.setup_logging()
     t1 = threading.Thread(target=check_update(), args=(last_run_month,last_run_hour))
     t1.start()
-
-    create_app().run(host='0.0.0.0', debug=True)
+    create_app().run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
 

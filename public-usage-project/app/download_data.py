@@ -9,6 +9,8 @@ from datetime import datetime
 import pandas as pd
 import mysql.connector
 from mysql.connector import Error
+from dotenv import load_dotenv
+
 
 # All Urls
 #  "https://arxiv.org/stats/get_monthly_downloads",
@@ -55,13 +57,6 @@ def find_most_recent(table, is_monthly):
 
     """
 
-    connection = mysql.connector.connect(
-            unix_socket= os.environ['DB_UNIX_SOCKET'],
-            user = os.environ['DB_USER'],
-            password = os.environ['DB_PASSWORD'],
-            database = os.environ['DB_NAME'],
-            port = '3306'
-        )
 
     time_frame = ""
     if is_monthly:
@@ -70,6 +65,15 @@ def find_most_recent(table, is_monthly):
         time_frame = "hourly"
 
     try:
+
+        load_dotenv()
+        connection = mysql.connector.connect(
+            unix_socket= os.environ['DB_UNIX_SOCKET'],
+            user = os.environ['DB_USER'],
+            password = os.environ['DB_PASSWORD'],
+            database = os.environ['DB_NAME'],
+            port = '3306'
+        )
         cursor = connection.cursor(dictionary=True)
         cursor.execute(
             """SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s ORDER BY created_time DESC LIMIT 1"""
@@ -220,7 +224,7 @@ def append_to_database(json_data, time_frame, table):
     cursor = None
     try:
 
-
+        load_dotenv()
         connection = mysql.connector.connect(
             unix_socket= os.environ['DB_UNIX_SOCKET'],
             user = os.environ['DB_USER'],
@@ -276,7 +280,7 @@ def append_to_database(json_data, time_frame, table):
 def write_to_database(daily_json_data, table):
     cursor = None
     try:
-
+        load_dotenv()
         connection = mysql.connector.connect(
             unix_socket= os.environ['DB_UNIX_SOCKET'],
             user = os.environ['DB_USER'],
