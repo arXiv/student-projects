@@ -291,8 +291,9 @@ def write_to_database(daily_json_data, table):
         cursor = connection.cursor(dictionary=True)
 
         # Query to get the data I will be changing
-        query = "INSERT INTO arXiv_stats_extraction_task (task_type, status, result, created_time) VALUES ( %s, 0, %s, %s);"
-        cursor.execute(query, (table,daily_json_data, datetime.now()))
+        query = "INSERT INTO arXiv_stats_extraction_task (task_type, status, result, created_time) VALUES (%s, %s, %s, %s)"
+        current_time = datetime.now()
+        cursor.execute(query, (table, 0,daily_json_data, current_time))
 
         connection.commit()
         return {"message": "Data inserted successfully."}

@@ -6,10 +6,12 @@ from datetime import datetime, timezone, timedelta
 import time
 import threading
 import os
+import logging
 
 
 
 def check_update(last_run_month, last_run_hour):
+    logging.warn("Got into thread")
     while(True):
         curr_time = datetime.now(timezone(timedelta(hours=-4)))
 
