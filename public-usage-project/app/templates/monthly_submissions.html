@@ -1,36 +1,48 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
-    <title>Monthly Submission</title>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-2.4.3.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-2.4.3.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-2.4.3.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.3.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-2.4.3.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-api-2.4.3.min.js"></script>
+    <title>Alt Monthly Submission</title>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.0.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.0.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.0.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.0.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-3.0.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-api-3.0.0.min.js"></script>
     <style>
-        body, html {
+        body,
+        html {
             height: 100%;
             margin: 0;
             display: flex;
             justify-content: center;
             align-items: center;
         }
+
         #center-container {
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
+            flex-direction: column;
+            /* Change to column to accommodate the button */
+        }
+
+        #toggle-button {
+            margin-bottom: 10px;
+            /* Add some space below the button */
         }
     </style>
 </head>
+
 <body>
     <div id="center-container">
+        <button id="toggle-button">Switch to Line Graph</button>
         <div id="myplot-submissions"></div>
     </div>
     <script type="text/javascript">
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             fetch(window.location.origin + "/api/get_monthly_submissions")
                 .then(response => {
                     if (!response.ok) {
@@ -39,60 +51,100 @@
                     return response.json();
                 })
                 .then(data => {
-                    const barData = [['Month', 'Submissions']];
-                    for (let i = 0; i < data.month.length; i++) {
-                        barData.push([new Date(data.month[i]).toISOString().substring(0, 7), data.submissions[i]]);
+                    
+                    // format ISO to month and years for readable data.
+                    function formatISOToMonthYear(isoString) {
+                        const date = new Date(isoString);
+                        const options = { year: 'numeric', month: 'long' };
+                        return date.toLocaleDateString('en-US', options);
                     }
 
+                    // create column data source to be used for the graph and hovertool.
                     const source = new Bokeh.ColumnDataSource({
                         data: {
-                            month: data.month.map(date => new Date(date).toISOString().substring(0, 7)),
-                            submissions: data.submissions
+                            month: data.month.map(date => new Date(date)).map(ms => ms.getTime()),
+                            formatted_month: data.month.map(formatISOToMonthYear),
+                            submissions: data.submissions,
                         }
                     });
 
-                    const colorMapper = new Bokeh.LinearColorMapper({
-                        palette: ['#FFD700', '#FFC200', '#FFAD00', '#FF9900', '#FF8400'], // Darker shades of yellow
-                        low: Math.min(...data.submissions),
-                        high: Math.max(...data.submissions)
-                    });
-
+                    // create basic plot
                     const p = new Bokeh.Plotting.figure({
                         width: 1000,
                         height: 500,
                         title: "Monthly Submissions",
                         x_axis_label: 'Month',
+                        x_axis_type: 'datetime',
                         y_axis_label: 'Submissions',
-                        x_range: barData.slice(1).map(item => item[0]),
                         tools: "pan,wheel_zoom,box_zoom,reset,save"
                     });
 
-                    p.vbar({
-                        x: { field: 'month' },
-                        top: { field: 'submissions' },
-                        width: 0.9,
-                        source: source,
-                        fill_color: { field: 'submissions', transform: colorMapper },
-                        line_color: 'none'  
+                    // by default, have our graph display as a vertical bar graph
+                    let currentGraphType = 'vbar';
+
+                    // Bokeh will automatically color in the vertical bars based on # of submissions.
+                    const colorMapper = new Bokeh.LinearColorMapper({
+                        palette: ['#FFD700', '#FFC300', '#FFB700', '#FFAD00', '#FFA000', '#FF9900', '#FF8C00', '#FF8400', '#FF7900']
                     });
 
-                    // Remove grid lines
-                    p.xgrid[0].visible = false;
-                    p.ygrid[0].visible = false;
+                    // function to handle what is currently on the graph on the page. 
+                    function updateGraph() {
+                        p.renderers = []; // Clear existing renderers
+                        // vertical bar and its args
+                        if (currentGraphType === 'vbar') {
+                            p.vbar({
+                                x: { field: 'month' },
+                                top: { field: 'submissions' },
+                                width: 30.44 * 24 * 60 * 60 * 1000 * 0.85,
+                                source: source,
+                                fill_color: { field: 'submissions', transform: colorMapper },
+                                line_color: 'none'
+                            });
+                            // change toggle button to the other graph
+                            document.getElementById("toggle-button").innerText = "Switch to Line Graph";
+                        } else {
+                            // line graph and its args
+                            p.line(
+                                { field: 'month' },
+                                { field: 'submissions' },
+                                {
+                                    source: source,
+                                    line_width: 2,
+                                    color: '#FF9900'
+                                }
+                            );
+                            // change toggle button to the other graph
+                            document.getElementById("toggle-button").innerText = "Switch to Bar Graph";
+                        }
+                        // display bokeh graph in myplot-submissions div
+                        Bokeh.Plotting.show(p, document.getElementById('myplot-submissions'));
+                    }
+
+                    // Initial graph
+                    updateGraph(); 
+
+                    // logic for toggle button 
+                    document.getElementById('toggle-button').addEventListener('click', function () {
+                        currentGraphType = (currentGraphType === 'vbar') ? 'line' : 'vbar';
+                        updateGraph();
+                    });
 
                     // Add hover tool
                     const hover = new Bokeh.HoverTool({
                         tooltips: [
-                            ["Month", "@month"],
+                            ["Month", "@formatted_month"],
                             ["Submissions", "@submissions"]
                         ]
                     });
                     p.add_tools(hover);
 
-                    // Disable scientific notation on y-axis
-                    p.yaxis[0].formatter = new Bokeh.BasicTickFormatter();
+                    // Remove grid lines
+                    p.xgrid.visible = false;
+                    p.ygrid.visible = false;
 
-                    Bokeh.Plotting.show(p, document.getElementById('myplot-submissions'));
+                    // Disable scientific notation on y-axis
+                    p.yaxis.formatter = new Bokeh.BasicTickFormatter();
+
                 })
                 .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);
@@ -100,4 +152,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -19,7 +19,9 @@
     <a id="api-monthly-submissions" href="#">API Monthly Submissions</a><br/>
     <a id="api-monthly-downloads" href="#">API Monthly Downloads</a><br/>
   </p>
-
+  <p>Old graph creation format if datetime is too complex / unwieldy.<br/>
+    <a href="{{ url_for('main.render_old_monthly_submissions') }}">Old Monthly Submissions graph.</a><br/>
+  </p>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var baseUrl = window.location.origin;

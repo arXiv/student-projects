@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Monthly Downloads</title>
+    <title>Monthly Submission</title>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.0.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.0.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.0.0.min.js"></script>
@@ -27,11 +27,11 @@
 </head>
 <body>
     <div id="center-container">
-        <div id="myplot-downloads"></div>
+        <div id="myplot-submissions"></div>
     </div>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            fetch(window.location.origin + "/api/get_monthly_downloads")
+            fetch(window.location.origin + "/api/get_monthly_submissions")
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
@@ -39,45 +39,46 @@
                     return response.json();
                 })
                 .then(data => {
+                    const barData = [['Month', 'Submissions']];
+                    for (let i = 0; i < data.month.length; i++) {
+                        barData.push([new Date(data.month[i]).toISOString().substring(0, 7), data.submissions[i]]);
+                    }
 
-                    // format ISO to month and years for readable data.
                     function formatISOToMonthYear(isoString) {
                         const date = new Date(isoString);
                         const options = { year: 'numeric', month: 'long' };
                         return date.toLocaleDateString('en-US', options);
                     }
 
-                    // create column data source to be used for the graph and hovertool.
                     const source = new Bokeh.ColumnDataSource({
                         data: {
-                            month: data.month.map(date => new Date(date)).map(ms => ms.getTime()),
+                            month: data.month.map(date => new Date(date).toISOString().substring(0, 7)),
                             formatted_month: data.month.map(formatISOToMonthYear),
-                            downloads: data.downloads
+                            submissions: data.submissions
                         }
                     });
 
-                    // Bokeh will automatically color in the vertical bars based on # of downloads.
                     const colorMapper = new Bokeh.LinearColorMapper({
-                        palette: ['#FFD700', '#FFC300', '#FFB700', '#FFAD00', '#FFA000', '#FF9900', '#FF8C00', '#FF8400', '#FF7900']
+                        palette: ['#FFD700', '#FFC200', '#FFAD00', '#FF9900', '#FF8400'], 
                     });
 
                     const p = new Bokeh.Plotting.figure({
                         width: 1000,
                         height: 500,
-                        title: "Monthly Downloads",
+                        title: "Monthly Submissions",
                         x_axis_label: 'Month',
-                        x_axis_type: 'datetime',
-                        y_axis_label: 'Downloads',
+                        y_axis_label: 'Submissions',
+                        x_range: barData.slice(1).map(item => item[0]),
                         tools: "pan,wheel_zoom,box_zoom,reset,save"
                     });
 
                     p.vbar({
                         x: { field: 'month' },
-                        top: { field: 'downloads' },
-                        width: 30.44 * 24 * 60 * 60 * 1000 * 0.85,
+                        top: { field: 'submissions' },
+                        width: 0.9,
                         source: source,
-                        fill_color: { field: 'downloads', transform: colorMapper },
-                        line_color: 'none'
+                        fill_color: { field: 'submissions', transform: colorMapper },
+                        line_color: 'none'  
                     });
 
                     // Remove grid lines
@@ -88,15 +89,22 @@
                     const hover = new Bokeh.HoverTool({
                         tooltips: [
                             ["Month", "@formatted_month"],
-                            ["Downloads", "@downloads"]
+                            ["Submissions", "@submissions"]
                         ]
                     });
                     p.add_tools(hover);
 
-                    // Disable scientific notation on y-axis
-                    p.yaxis.formatter = new Bokeh.NumeralTickFormatter({ format: "0a" });
 
-                    Bokeh.Plotting.show(p, document.getElementById('myplot-downloads'));
+                    // Disable scientific notation on y-axis
+                    p.yaxis.formatter = new Bokeh.BasicTickFormatter();
+
+                    // Set x-axis to only appear every 5 years.
+                    const hardTicks = ['1991-07', '1995-01', '2000-01', '2005-01','2010-01', '2015-01', '2020-01'];
+                    p.xaxis.ticker = new Bokeh.FixedTicker({ ticks: hardTicks });
+                    
+                    
+
+                    Bokeh.Plotting.show(p, document.getElementById('myplot-submissions'));
                 })
                 .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);
