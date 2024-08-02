@@ -4,7 +4,7 @@ import io
 from time import sleep
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import pandas as pd
 import mysql.connector
@@ -304,3 +304,18 @@ def write_to_database(daily_json_data, table):
     finally:
         if cursor is not None:
             cursor.close()
+
+
+def check_update(last_run_month, last_run_hour):
+    print("Got into thread")
+    while(True):
+        curr_time = datetime.now(timezone(timedelta(hours=-4)))
+
+        if (curr_time.month > last_run_month.month):
+            last_run_month = curr_time
+            monthly_data()
+
+        if (curr_time.hour - last_run_hour.hour >= 1):
+            last_run_hour = curr_time
+            daily_data(last_run_hour.strftime("%y%M%d"))
+        sleep(3600)
