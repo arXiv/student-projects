@@ -29,7 +29,8 @@ if __name__ == '__main__':
     last_run_hour = datetime(2024, 7,31,0)
     client = gcp_logging.Client()
     client.setup_logging()
-    t1 = threading.Thread(target=check_update(), args=(last_run_month,last_run_hour))
+    logging.critical("SETUP LOGGING")
+    t1 = threading.Thread(target=check_update, args=(last_run_month,last_run_hour,))
     t1.start()
     create_app().run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
 
