@@ -4,7 +4,7 @@ from app.api import api
 import multiprocessing
 from flask_cors import CORS
 from datetime import datetime
-import download_data
+from app import download_data
 
 
 def create_app(app_config='development'):
