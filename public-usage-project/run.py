@@ -28,13 +28,11 @@ def check_update(last_run_month, last_run_hour):
 if __name__ == '__main__':
     last_run_month = datetime(2024,6,1)
     last_run_hour = datetime(2024, 7,31,0)
-    print("BEFORE P1")
     client = gcp_logging.Client()
     client.setup_logging()
-    logging.warn("Warning")
-    gcp_logging.Logger.log("Logger")
     p1 = multiprocessing.Process(target=check_update, args=(last_run_month,last_run_hour,))
     p1.start()
     create_app().run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
+    p1.join()
 
 
