@@ -14,7 +14,7 @@
     <div id="myplot-downloads"></div>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            fetch('http://127.0.0.1:5002/api/get_monthly_downloads')
+            fetch(window.locaiton.origin + "/api/get_monthly_downloads")
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
