@@ -16,7 +16,7 @@ def check_update(last_run_month, last_run_hour):
             last_run_month = curr_time
             download_data.monthly_data()
 
-        if (curr_time - last_run_month):
+        if (curr_time.hour - last_run_hour.hour >= 1):
             last_run_hour = curr_time
             download_data.daily_data(last_run_hour.strftime("%y%M%d"))
         time.sleep(3600)
