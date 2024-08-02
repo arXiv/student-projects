@@ -16,11 +16,11 @@ def get_hourly_submission_data():
 
     Args: N/A
 
-    Returns: 
+    Returns:
         JSON needed for frontend bokeh plotting,
-        JSON Error in the case something fails. 
+        JSON Error in the case something fails.
     """
-    
+
     try:
         results = extract_from_database("hourly_connection")
         if results:
@@ -39,9 +39,9 @@ def get_monthly_submission_data():
 
     Args: N/A
 
-    Returns:  
+    Returns:
         JSON needed for frontend bokeh plotting,
-        JSON Error in the case something fails. 
+        JSON Error in the case something fails.
     """
     try:
         results = extract_from_database("monthly_submission")
@@ -60,9 +60,9 @@ def get_monthly_downloads_data():
 
     Args: N/A
 
-    Returns: 
+    Returns:
         JSON needed for frontend bokeh plotting,
-        JSON Error in the case something fails. 
+        JSON Error in the case something fails.
     """
     try:
         results = extract_from_database("monthly_downloads")
@@ -78,7 +78,7 @@ def extract_from_database(task_type):
     """
     Populates the given dict with formatted doc data.
 
-    Args: 
+    Args:
         connection: an existing mySQL connection to the database.
         task_type: a string specifying which task type we're to fetch from
 
@@ -87,16 +87,16 @@ def extract_from_database(task_type):
     """
     cursor = None
     try:
-        
+
         # specifically, we want the json located at the results column of the corresponding task row
         query = "SELECT result FROM arXiv_stats_extraction_task WHERE task_type = %s ORDER BY created_time DESC LIMIT 1"
         print(query, (task_type))
 
         connection = mysql.connector.connect(
-            host = '127.0.0.1',
-            user = 'root',
-            password = 'your_password',
-            database = 'your_dbname',
+            unix_socket= os.environ['DB_UNIX_SOCKET'],
+            user = os.environ['DB_USER'],
+            password = os.environ['DB_PASSWORD'],
+            database = os.environ['DB_NAME'],
             port = '3306'
         )
         cursor = connection.cursor(dictionary=True)
