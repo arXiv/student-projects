@@ -9,12 +9,30 @@
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.3.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-2.4.3.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-api-2.4.3.min.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #center-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-    <div id="myplot-hourly"></div>
+    <div id="center-container">
+        <div id="myplot-hourly"></div>
+    </div>
+
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            fetch(window.locaiton.origin + "/api/get_hourly_usage")
+            fetch(window.location.origin + "/api/get_hourly_usage")
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
@@ -54,7 +72,9 @@
                         x: { field: 'hour' },
                         top: { field: 'connections' },
                         width: 0.9,
-                        source: source
+                        source: source,
+                        fill_color: '#FF8400',
+                        line_color: 'black'
                     });
 
                     // Remove grid lines

@@ -9,12 +9,29 @@
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-2.4.3.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-2.4.3.min.js"></script>
     <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-api-2.4.3.min.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #center-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-    <div id="myplot-submissions"></div>
+    <div id="center-container">
+        <div id="myplot-submissions"></div>
+    </div>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            fetch(window.locaiton.origin + "/api/get_monthly_submissions")
+            fetch(window.location.origin + "/api/get_monthly_submissions")
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
@@ -22,20 +39,22 @@
                     return response.json();
                 })
                 .then(data => {
-                    // console.log('Fetched data:', data);
-
                     const barData = [['Month', 'Submissions']];
                     for (let i = 0; i < data.month.length; i++) {
                         barData.push([new Date(data.month[i]).toISOString().substring(0, 7), data.submissions[i]]);
                     }
-
-                    // console.log('Bar data:', barData);
 
                     const source = new Bokeh.ColumnDataSource({
                         data: {
                             month: data.month.map(date => new Date(date).toISOString().substring(0, 7)),
                             submissions: data.submissions
                         }
+                    });
+
+                    const colorMapper = new Bokeh.LinearColorMapper({
+                        palette: ['#FFD700', '#FFC200', '#FFAD00', '#FF9900', '#FF8400'], // Darker shades of yellow
+                        low: Math.min(...data.submissions),
+                        high: Math.max(...data.submissions)
                     });
 
                     const p = new Bokeh.Plotting.figure({
@@ -52,7 +71,9 @@
                         x: { field: 'month' },
                         top: { field: 'submissions' },
                         width: 0.9,
-                        source: source
+                        source: source,
+                        fill_color: { field: 'submissions', transform: colorMapper },
+                        line_color: 'none'
                     });
 
                     // Remove grid lines
