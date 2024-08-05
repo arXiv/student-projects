@@ -33,48 +33,6 @@ def get_hourly_submission_data():
     return jsonify(processed_result)
 
 
-@api.route('/get_monthly_submissions', methods=['GET'])
-def get_monthly_submission_data():
-    """
-    Route for monthly submission data requests.
-
-    Args: N/A
-
-    Returns:
-        JSON needed for frontend bokeh plotting,
-        JSON Error in the case something fails.
-    """
-    try:
-        results = extract_from_database("monthly_submission")
-        if results:
-            processed_result = json.loads(results[0]['result'])
-    except Exception as e:
-        return jsonify({'error': str(e)}), 502
-
-    return jsonify(processed_result)
-
-
-@api.route('/get_monthly_downloads', methods=['GET'])
-def get_monthly_downloads_data():
-    """
-    Route for monthly download data requests.
-
-    Args: N/A
-
-    Returns:
-        JSON needed for frontend bokeh plotting,
-        JSON Error in the case something fails.
-    """
-    try:
-        results = extract_from_database("monthly_downloads")
-        if results:
-            processed_result = json.loads(results[0]['result'])
-    except Exception as e:
-        return jsonify({'error': str(e)}), 502
-
-    return jsonify(processed_result)
-
-
 def extract_from_database(task_type):
     """
     Populates the given dict with formatted doc data.

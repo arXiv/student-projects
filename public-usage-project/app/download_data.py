@@ -62,7 +62,7 @@ def find_most_recent(table, is_monthly):
     if is_monthly:
         time_frame = "month"
     else:
-        time_frame = "hourly"
+        time_frame = "hour"
 
     try:
 
@@ -163,28 +163,34 @@ def monthly_data():
 
     if(downloads.ok and submissions.ok):
 
-        # Downloads
-        date = find_most_recent("monthly_downloads", True)
-
-        data = split_csv_montly(downloads.content.decode('utf-8'), date)
-        if data is None:
-            return
-        download_json_data = csv_to_json(data)
 
         # Submissions
         date = find_most_recent("monthly_submission", True)
 
         data = split_csv_montly(submissions.content.decode('utf-8'), date)
-        if data is None:
-            return
 
-        submission_json_data = csv_to_json(data)
+        if data is not None:
+            submission_json_data = csv_to_json(data)
+            append_to_database(submission_json_data, 'month', "monthly_submission")
 
         # .ok makes sure it doesn't get a 400 or above error
 
-        append_to_database(download_json_data, 'month', "monthly_downloads")
 
-        append_to_database(submission_json_data, 'month', "monthly_submission")
+
+        # Downloads
+        date = find_most_recent("monthly_downloads", True)
+
+        data = split_csv_montly(downloads.content.decode('utf-8'), date)
+
+        if data is not None:
+            download_json_data = csv_to_json(data)
+            append_to_database(download_json_data, 'month', "monthly_downloads")
+            #return
+
+
+
+
+
 
 
 
@@ -200,14 +206,14 @@ def daily_data(todays_date):
 
         daily_json_data_tup = split_csv_hourly(daily.content.decode('utf-8'), date)
         data = daily_json_data_tup[0]
-        if data is None:
-            return
+        if data is not None:
+            daily_json_data = csv_to_json(data)
+            if(daily_json_data_tup[1]):
+                append_to_database(daily_json_data, 'hour', "hourly_connection" )
 
-        daily_json_data = csv_to_json(data)
-        if(daily_json_data_tup[1]):
-            append_to_database(daily_json_data, 'hour', "hourly_connection" )
-        else:
-            write_to_database(json.dumps(daily_json_data), "hourly_connection")
+            else:
+                write_to_database(json.dumps(daily_json_data), "hourly_connection")
+
 
 
 def append_to_database(json_data, time_frame, table):
@@ -222,9 +228,10 @@ def append_to_database(json_data, time_frame, table):
 
     """
     cursor = None
+    load_dotenv()
     try:
 
-        load_dotenv()
+
         connection = mysql.connector.connect(
             unix_socket= os.environ['DB_UNIX_SOCKET'],
             user = os.environ['DB_USER'],
@@ -293,7 +300,7 @@ def write_to_database(daily_json_data, table):
         # Query to get the data I will be changing
         query = "INSERT INTO arXiv_stats_extraction_task (task_type, status, result, created_time) VALUES (%s, %s, %s, %s)"
         current_time = datetime.now()
-        cursor.execute(query, (table, 0,daily_json_data, current_time))
+        cursor.execute(query, (table, 0, daily_json_data, current_time))
 
         connection.commit()
         return {"message": "Data inserted successfully."}
@@ -307,7 +314,6 @@ def write_to_database(daily_json_data, table):
 
 
 def check_update(last_run_month, last_run_hour):
-    print("Got into thread")
 
     curr_time = datetime.now(timezone(timedelta(hours=-4)))
 
