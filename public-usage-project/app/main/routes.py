@@ -23,3 +23,7 @@ def render_monthly_submissions():
 @main.route('/old_monthly_submissions', methods=['GET'])
 def render_old_monthly_submissions():
     return render_template('old_monthly_submissions.html')
+
+@main.route('/alt_monthly_downloads', methods=['GET'])
+def render_alt_monthly_downloads():
+    return render_template('alt_monthly_downloads.html')

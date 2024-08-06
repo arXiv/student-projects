@@ -3,12 +3,12 @@
 <head>
     <meta charset="utf-8">
     <title>Monthly Downloads</title>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.0.0.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.0.0.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.0.0.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.0.0.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-3.0.0.min.js"></script>
-    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-api-3.0.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.5.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.5.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.5.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.5.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-3.5.1.min.js"></script>
+    <script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-api-3.5.1.min.js"></script>
     <style>
         body, html {
             height: 100%;
@@ -22,6 +22,7 @@
             justify-content: center;
             align-items: center;
             width: 100%;
+            flex-direction: column;
         }
     </style>
 </head>
@@ -46,11 +47,16 @@
                         const options = { year: 'numeric', month: 'long' };
                         return date.toLocaleDateString('en-US', options);
                     }
+                    const dates = data.month.map(date => new Date(date)).map(ms => ms.getTime());
+
+                    // Calculate the minimum and maximum dates
+                    const minDate = Math.min(...dates);
+                    const maxDate = Math.max(...dates);
 
                     // create column data source to be used for the graph and hovertool.
                     const source = new Bokeh.ColumnDataSource({
                         data: {
-                            month: data.month.map(date => new Date(date)).map(ms => ms.getTime()),
+                            month: dates,
                             formatted_month: data.month.map(formatISOToMonthYear),
                             downloads: data.downloads
                         }
@@ -68,7 +74,7 @@
                         x_axis_label: 'Month',
                         x_axis_type: 'datetime',
                         y_axis_label: 'Downloads',
-                        tools: "pan,wheel_zoom,box_zoom,reset,save"
+                        tools: "pan,wheel_zoom,box_zoom,reset,save",
                     });
 
                     p.vbar({
@@ -96,7 +102,40 @@
                     // Disable scientific notation on y-axis
                     p.yaxis.formatter = new Bokeh.NumeralTickFormatter({ format: "0a" });
 
-                    Bokeh.Plotting.show(p, document.getElementById('myplot-downloads'));
+                    // Create a second plot for the RangeTool
+                    const p2 = new Bokeh.Plotting.figure({
+                        width: 1000,
+                        height: 150,
+                        x_axis_type: 'datetime',
+                        y_axis_type: null,
+                        tools: "",
+                        toolbar_location: null,
+                        x_range: p.x_range  
+                    });
+
+                    p2.vbar({
+                        x: { field: 'month' },
+                        top: { field: 'downloads' },
+                        width: 30.44 * 24 * 60 * 60 * 1000 * 0.85,
+                        source: source,
+                        fill_color: { field: 'downloads', transform: colorMapper },
+                        line_color: 'none'
+                    });
+
+                    // Add a RangeTool to the second plot
+                    const rangeTool = new Bokeh.RangeTool({
+                        x_range: p.x_range  
+                    });
+                    p2.add_tools(rangeTool);
+
+                    // Link the RangeTool to the first plot
+                    p.x_range.start = rangeTool.x_range.start
+                    p.x_range.end = rangeTool.x_range.end
+
+
+                    // Create a layout to combine both plots
+                    const layout = new Bokeh.Column({children: [p, p2]});
+                    Bokeh.Plotting.show(layout, document.getElementById('myplot-downloads'));
                 })
                 .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);
@@ -105,3 +144,5 @@
     </script>
 </body>
 </html>
+
+
