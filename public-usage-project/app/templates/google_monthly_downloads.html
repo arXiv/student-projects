@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Monthly Downloads</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #center-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            flex-direction: column;
+        }
+        #myplot-downloads {
+            width: 1000px;
+            height: 500px;
+        }
+        #range-chart {
+            width: 1000px;
+            height: 150px;
+        }
+        #reset-button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="center-container">
+        <div id="myplot-downloads"></div>
+        <div id="range-chart"></div>
+        <button id="reset-button">Reset</button>
+    </div>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch(window.location.origin + "/api/get_monthly_downloads")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    google.charts.load('current', {'packages':['corechart', 'controls']});
+                    google.charts.setOnLoadCallback(drawChart);
+
+                    function formatYearMonthToDate(yearMonth) {
+                        const [year, month] = yearMonth.split('-');
+                        return new Date(year, month - 1);
+                    }
+
+                    function formatDateToMonthYear(date) {
+                        const options = { year: 'numeric', month: 'long' };
+                        return date.toLocaleDateString('en-US', options);
+                    }
+
+                    function getColor(value, max) {
+                        const colors = ['#FFD700', '#FFC300', '#FFB700', '#FFAD00', '#FFA000', '#FF9900', '#FF8C00', '#FF8400', '#FF7900'];
+                        const step = max / colors.length;
+                        const index = Math.min(Math.floor(value / step), colors.length - 1);
+                        return colors[index];
+                    }
+
+                    function drawChart() {
+                        const formattedData = data.month.map((date, index) => {
+                            const dateObj = formatYearMonthToDate(date);
+                            const formattedMonthYear = formatDateToMonthYear(dateObj);
+                            const color = getColor(data.downloads[index], Math.max(...data.downloads));
+                            return [dateObj, data.downloads[index], formattedMonthYear, color];
+                        });
+
+                        const dataTable = new google.visualization.DataTable();
+                        dataTable.addColumn('date', 'Month');
+                        dataTable.addColumn('number', 'Downloads');
+                        dataTable.addColumn({type: 'string', role: 'tooltip', p: {html: false}});
+                        dataTable.addColumn({type: 'string', role: 'style'});
+                        dataTable.addRows(formattedData.map(row => {
+                            return [row[0], row[1], `${row[2]}: ${row[1]}`, row[3]];
+                        }));
+
+                        const dashboard = new google.visualization.Dashboard(document.getElementById('center-container'));
+
+                        const chartOptions = {
+                            title: 'Monthly Downloads',
+                            width: 1000,
+                            height: 500,
+                            animation:{
+                                duration: 500,
+                                easing: 'out',
+                            },
+                            hAxis: { title: 'Month' },
+                            vAxis: { title: 'Downloads', format: 'short' },
+                            legend: { position: 'none' },
+                            chartArea: { width: '80%', height: '70%' },
+                            tooltip: { isHtml: false }
+                        };
+
+                        const rangeSliderOptions = {
+                            filterColumnIndex: 0,
+                            ui: {
+                                chartType: 'LineChart',
+                                chartOptions: {
+                                    height: 150,
+                                    chartArea: { width: '80%', height: '70%' },
+                                    hAxis: { title: '' },
+                                    vAxis: { title: '', format: 'short' },
+                                    legend: { position: 'none' },
+                                    title: 'Drag the middle and edges of the selection box to change the range above'
+                                }
+                            }
+                        };
+
+                        const chart = new google.visualization.ChartWrapper({
+                            chartType: 'ColumnChart',
+                            containerId: 'myplot-downloads',
+                            options: chartOptions
+                        });
+
+                        const rangeSlider = new google.visualization.ControlWrapper({
+                            controlType: 'ChartRangeFilter',
+                            containerId: 'range-chart',
+                            options: rangeSliderOptions
+                        });
+
+                        dashboard.bind(rangeSlider, chart);
+
+                        
+                        setTimeout(() => {
+                            dashboard.draw(dataTable);
+                        }, 500); 
+
+                        document.getElementById('reset-button').addEventListener('click', function() {
+                            rangeSlider.setState({ range: { start: null, end: null } });
+                            dashboard.draw(dataTable);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+        });
+    </script>
+</body>
+</html>

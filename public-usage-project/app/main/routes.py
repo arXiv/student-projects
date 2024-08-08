@@ -20,9 +20,13 @@ def render_monthly_downloads():
 def render_monthly_submissions():
     return render_template('monthly_submissions.html')
 
-@main.route('/old_monthly_submissions', methods=['GET'])
-def render_old_monthly_submissions():
-    return render_template('old_monthly_submissions.html')
+@main.route('/google_monthly_downloads', methods=['GET'])
+def render_google_monthly_downloads():
+    return render_template('google_monthly_downloads.html')
+
+@main.route('/plotly_monthly_downloads', methods=['GET'])
+def render_plotly_monthly_downloads():
+    return render_template('plotly_monthly_downloads.html')
 
 @main.route('/alt_monthly_downloads', methods=['GET'])
 def render_alt_monthly_downloads():
