@@ -9,33 +9,25 @@
   <h3>
     Simple redirector page.
   </h3>
-  <p>API served bokeh graphs.<br/>
-    <a id="api-hourly-usage-graph" href="#">Hourly Usage Graphs</a><br/>
-    <a id="api-monthly-submissions-graph" href="#">Monthly Submissions Graphs</a><br/>
-    <a id="api-monthly-downloads-graph" href="#">Monthly Downloads Graphs</a><br/>
+  <p>Global Graphs:<br/>
+    <p>Nothing, yet</p>
+    <!-- <a href="{{ url_for('main.render_hourly_usage') }}">Hourly Usage Graph</a><br/> -->
   </p>
-  <p>Test base API results here:<br/>
-    <a id="api-hourly-usage" href="#">API Hourly Usage</a><br/>
-    <a id="api-monthly-submissions" href="#">API Monthly Submissions</a><br/>
-    <a id="api-monthly-downloads" href="#">API Monthly Downloads</a><br/>
+  <p>Archive/Category Graphs:<br/>
+    <p>Nothing, yet</p>
   </p>
-  <p>Old graph creation format not using datetime:<br/>
-    <a href="{{ url_for('main.render_old_monthly_submissions') }}">Old Monthly Submissions graph.</a><br/>
+  <p>Geomaps:<br/>
+    <a href="{{ url_for('main.render_downloads_by_country') }}">Downloads by Country</a><br/>
   </p>
-  <p>Old pages with BokehJS made graphs:<br/>
-    <a href="{{ url_for('main.render_hourly_usage') }}">Hourly Usage Graphs</a><br/>
-    <a href="{{ url_for('main.render_monthly_submissions') }}">Monthly Submissions Graphs</a><br/>
-    <a href="{{ url_for('main.render_monthly_downloads') }}">Monthly Downloads Graphs</a><br/>
+  <p>Test real database fetch API here:<br/>
+    <a id="api-hourly-primary-count" href="#">Get Hourly Primary count</a><br/>
+    <a id="api-downloads-by-country" href="#">Get downloads by country</a><br/>
   </p>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var baseUrl = window.location.origin;
-      document.getElementById("api-hourly-usage-graph").href = baseUrl + "/api/get_hourly_usage_graph";
-      document.getElementById("api-monthly-submissions-graph").href = baseUrl + "/api/get_monthly_submissions_graph";
-      document.getElementById("api-monthly-downloads-graph").href = baseUrl + "/api/get_monthly_downloads_graph";
-      document.getElementById("api-hourly-usage").href = baseUrl + "/api/get_hourly_usage";
-      document.getElementById("api-monthly-submissions").href = baseUrl + "/api/get_monthly_submissions";
-      document.getElementById("api-monthly-downloads").href = baseUrl + "/api/get_monthly_downloads";
+      document.getElementById("api-hourly-primary-count").href = baseUrl + "/api/get_hourly_primary_count";
+      document.getElementById("api-downloads-by-country").href = baseUrl + "/api/get_primary_count_by_country";
     });
   </script>
 </body>
