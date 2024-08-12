@@ -22,7 +22,9 @@
   <p>Test real database fetch API here:<br/>
     <a id="api-downloads-by-hour" href="#">Get downloads by Hour</a><br/>
     <a id="api-downloads-by-country" href="#">Get downloads by Country</a><br/>
+    <a id="api-downloads-by-archive" href="#">Get downloads by Archive</a><br/>
     <a id="api-downloads-by-category" href="#">Get downloads by Category</a><br/>
+
   </p>
   <p>Am I logged in?:<br/>
     <a id="logged-in-status" href="#">Click me and find out</a><br/>
@@ -32,6 +34,7 @@
       var baseUrl = window.location.origin;
       document.getElementById("api-downloads-by-hour").href = baseUrl + "/api/get_hourly_primary_count";
       document.getElementById("api-downloads-by-country").href = baseUrl + "/api/get_primary_count_by_country";
+      document.getElementById("api-downloads-by-archive").href = baseUrl +"/api/get_primary_count_by_archive";
       document.getElementById("api-downloads-by-category").href = baseUrl + "/api/get_primary_count_by_category";
       document.getElementById("logged-in-status").href = baseUrl + "/api/auth/status";
     });

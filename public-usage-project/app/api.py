@@ -202,6 +202,50 @@ def get_primary_count_by_category():
     finally:
         session.close()
 
+@api.route('/get_primary_count_by_archive', methods=['GET'])
+def get_primary_count_by_archive():
+    """
+    Route for retrieving total primary counts aggregated by archive.
+
+    Args: N/A
+
+    Returns: 
+        JSON with aggregated primary counts by archive, something along the lines of 
+        [
+            {
+                "archive": "astro-ph",
+                "total_primary_count": "99775"
+            },
+            {
+                "archive": "cond-mat",
+                "total_primary_count": "87770"
+            },...
+        ]
+        
+        JSON Error in the case something fails. 
+    """
+    session = Session()
+    try:
+        result = (
+            session.query(
+                HourlyDownloadData.archive,
+                func.sum(HourlyDownloadData.primary_count).label('total_primary_count')
+            )
+            .group_by(HourlyDownloadData.archive)
+            .all()
+        )
+
+        # Format result for JSON response
+        formatted_result = [
+            {"archive": archive, "total_primary_count": total}
+            for archive, total in result
+        ]
+        return jsonify(formatted_result)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
+    finally:
+        session.close()
 
 
 
