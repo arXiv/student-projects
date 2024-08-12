@@ -55,6 +55,7 @@ def get_hourly_downloads():
     """
     session = Session()
     try:
+        # Summate total primary counts based on date.
         result = (
             session.query(
                 HourlyDownloadData.start_dttm,
@@ -71,27 +72,6 @@ def get_hourly_downloads():
         ]
         return jsonify(formatted_result)
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 502
-    finally:
-        session.close()
-
-#TODO: functionality for monthly downloads once the sheet comes in
-@api.route('/get_monthly_downloads', methods=['GET'])
-def get_new_monthly_download_count():
-    
-    """
-    Route for retrieving global monthly download counts, aggregated by start_dttm.
-
-    Args: N/A
-
-    Returns: 
-        JSON with aggregated global primary count downloads
-        JSON Error in the case something fails. 
-    """
-    session = Session()
-    try:
-        return jsonify({'error': 'This endpoint is not ready yet!'}), 503
     except Exception as e:
         return jsonify({'error': str(e)}), 502
     finally:
@@ -121,7 +101,9 @@ def get_primary_count_by_country():
         JSON Error in the case something fails. 
     """
     session = Session()
+
     try:
+        # Summate total primary counts based on country.
         result = (
             session.query(
                 HourlyDownloadData.country,
@@ -142,3 +124,97 @@ def get_primary_count_by_country():
         return jsonify({'error': str(e)}), 502
     finally:
         session.close()
+
+
+@api.route('/get_primary_count_by_category', methods=['GET'])
+def get_primary_count_by_category():
+    """
+    Route for retrieving total primary counts aggregated by category.
+    The first item in the category mapping will be subsumed into the corresponding category.
+
+    Returns: 
+        JSON with aggregated primary counts by country, something along the lines of 
+        [
+            {
+                "category": "astro-ph",
+                "total_primary_count": "11949"
+            },
+            {
+                "category": "astro-ph.CO",
+                "total_primary_count": "15245"
+            },...
+        ]
+
+        JSON error indicating otherwise.
+    """
+    # mapper dict for subsumed categories.
+    category_mapping = {
+    'cmp-lg': 'cs.CL',
+    'adap-org': 'nlin.AO',
+    'comp-gas': 'nlin.CG',
+    'chao-dyn': 'nlin.CD',
+    'solv-int': 'nlin.SI',
+    'patt-sol': 'nlin.PS',
+    'alg-geom': 'math.AG',
+    'dg-ga': 'math.DG',
+    'funct-an': 'math.FA',
+    'q-alg': 'math.QA',
+    'mtrl-th': 'cond-mat.mtrl-sci',
+    'supr-con': 'cond-mat.supr-con',
+    'acc-phys': 'physics.acc-ph',
+    'ao-sci': 'physics.ao-ph',
+    'atom-ph': 'physics.atom-ph',
+    'bayes-an': 'physics.data-an',
+    'chem-ph': 'physics.chem-ph',
+    'plasm-ph': 'physics.plasm-ph'
+    }
+
+    session = Session()
+    try:
+        # Summate total primary counts based on category.
+        result = (
+            session.query(
+                HourlyDownloadData.category,
+                func.sum(HourlyDownloadData.primary_count).label('total_primary_count')
+            )
+            .group_by(HourlyDownloadData.category)
+            .all()
+        )
+
+        # Convert result to a dictionary for easier manipulation
+        category_counts = {category: total for category, total in result}
+
+        # Subsuming the first item into the corresponding category
+        for item, main_category in category_mapping.items():
+            if item in category_counts:
+                # Add the count of the first item to the main category
+                category_counts[main_category] = category_counts.get(main_category, 0) + category_counts[item]
+                # Remove the first item from the counts
+                del category_counts[item]
+
+        # Format result for JSON response
+        formatted_result = [{"category": category, "total_primary_count": total} for category, total in category_counts.items()]
+        
+        return jsonify(formatted_result)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
+    finally:
+        session.close()
+
+
+
+
+@api.route('/auth/status', methods=['GET'])
+def auth_status():
+    """
+    Route for checking the logged-in status of the user.
+
+    Args: N/A
+
+    Returns: 
+        JSON indicating whether the user is logged in.
+    """
+    
+    # TODO: PROVIDE FUNCTIONALITY
+    return jsonify({'logged_in': False}), 501
