@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Monthly Downloads</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #center-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <div id="center-container">
+        <div id="myplot-downloads" style="width: 1000px; height: 500px;"></div>
+        <div id="myplot-range" style="width: 1000px; height: 150px;"></div>
+    </div>
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch(window.location.origin + "/api/get_monthly_downloads")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Format ISO to month and year for readable data
+                    function formatISOToMonthYear(isoString) {
+                        const date = new Date(isoString);
+                        const options = { year: 'numeric', month: 'long' };
+                        return date.toLocaleDateString('en-US', options);
+                    }
+
+                    const formattedMonths = data.month.map(formatISOToMonthYear);
+                    const downloads = data.downloads;
+
+                    const trace1 = {
+                        x: data.month,
+                        y: downloads,
+                        type: 'bar',
+                        hovertemplate: '<b>Month: %{x}</b><br>Downloads: %{y}<extra></extra>',
+                        marker: {
+                            color: downloads, // Use download values for color gradient
+                            colorscale: [
+                                [0, '#FFD700'],
+                                [0.125, '#FFC300'],
+                                [0.25, '#FFB700'],
+                                [0.375, '#FFAD00'],
+                                [0.5, '#FFA000'],
+                                [0.625, '#FF9900'],
+                                [0.75, '#FF8C00'],
+                                [0.875, '#FF8400'],
+                                [1, '#FF7900']
+                            ],
+                            showscale: false
+                        }
+                    };
+
+                    const layout1 = {
+                        title: "Monthly Downloads",
+                        xaxis: {
+                            title: 'Month',
+                            type: 'date',
+                            tickformat: '%Y-%m',
+                        },
+                        yaxis: {
+                            title: 'Downloads',
+                            ticks: 'outside',
+                            tickformat: ','
+                        },
+                        showlegend: false
+                    };
+
+                    Plotly.newPlot('myplot-downloads', [trace1], layout1);
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+        });
+    </script>
+</body>
+</html>

@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Downloads by Country</title>
+    <title>Downloads by Category</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        #map {
+        #chart {
             width: 100%;
             height: 600px;
         }
     </style>
 </head>
 <body>
-    <div id="map"></div>
+    <div id="chart"></div>
 
     <script>
-        fetch('/api/get_primary_count_by_country')
+        fetch('/api/')
             .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
@@ -24,28 +24,14 @@
                     return response.json();
                 })
             .then(data => {
-                const countries = data.map(d => d.country);
+                const categories = data.map(d => d.category);
                 const totals = data.map(d => d.total_primary_count);
-                // console.log(d.country);
-                // console.log(countries);
-                // const data = {
-                // countries: ['Algeria', 'Bangladesh', 'Chile', 'China', 'Germany',
-                //     'Iran', 'Japan', 'Malaysia', 'United States of America',
-
-                // ],
-                // downloads: [
-                //     1326028, 1320984, 1522717, 1591373, 1611263, 1487721,
-                //     1387458, 1239495, 1458376
-                // ]
-            //};
+                const date = data.map(d=>d.date);
                 const trace = {
-                    type: 'choropleth',
-                    locations: countries,
-                    locationmode: 'country names',
-                    z: totals,
-                    text: countries.map((country, i) => `${country}: ${totals[i]} Downloads`),
+                    type: 'line',
+
+                    text: "a",
                     hoverinfo: 'text',
-                    color: totals,
                     colorscale: [
                                 [0, '#FFD700'],
                                 [0.125, '#FFC300'],
@@ -64,15 +50,15 @@
 
                 const layout = {
                     title: 'Total Downloads by Country',
-                    geo: {
-                        showframe: false,
-                        projection: {
-                            type: 'natural earth'
-                        },
+                    xaxis:{
+                        title: "Date"
                     },
+                    yaxis:{
+                        title: "Downloads"
+                    }
                 };
 
-                Plotly.newPlot('map', [trace], layout);
+                Plotly.newPlot('chart', [trace], layout);
             })
             .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);
