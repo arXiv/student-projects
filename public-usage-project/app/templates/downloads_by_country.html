@@ -26,6 +26,12 @@
             .then(data => {
                 const countries = data.map(d => d.country);
                 const totals = data.map(d => d.total_primary_count);
+                // Object.defineProperty(String.prototype, 'capitalize' , {
+                //     value: function(){
+                //         return this.charAt(0).toUpperCase() + this.slice(1);
+                //     },
+                //     enumerable: false
+                // });
                 // console.log(d.country);
                 // console.log(countries);
                 // const data = {
@@ -40,12 +46,13 @@
             //};
                 const trace = {
                     type: 'choropleth',
+                    geojson:{type: "polygon"},
                     locations: countries,
                     locationmode: 'country names',
                     z: totals,
                     text: countries.map((country, i) => `${country}: ${totals[i]} Downloads`),
                     hoverinfo: 'text',
-                    color: totals,
+                    //color: totals,
                     colorscale: [
                                 [0, '#FFD700'],
                                 [0.125, '#FFC300'],
@@ -65,14 +72,16 @@
                 const layout = {
                     title: 'Total Downloads by Country',
                     geo: {
+                        showocean: true,
+                        oceancolor: 'rgb(6,100,115)',
                         showframe: false,
                         projection: {
-                            type: 'natural earth'
+                            type: 'robinson'
                         },
                     },
                 };
 
-                Plotly.newPlot('map', [trace], layout);
+                Plotly.newPlot('map', [trace], layout, {showLink: false});
             })
             .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);
