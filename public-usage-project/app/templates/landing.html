@@ -10,11 +10,10 @@
     Simple redirector page.
   </h3>
   <p>Global Graphs:<br/>
-    <p>Nothing, yet</p>
-    <!-- <a href="{{ url_for('main.render_hourly_usage') }}">Hourly Usage Graph</a><br/> -->
+    <a href="{{ url_for('main.render_hourly_usage') }}">Hourly Usage Graph</a><br/>
   </p>
   <p>Archive/Category Graphs:<br/>
-    <p>Nothing, yet</p>
+    <a href="{{ url_for('main.render_downloads_by_category') }}">Downloads by Category</a><br/>
   </p>
   <p>Geomaps:<br/>
     <a href="{{ url_for('main.render_downloads_by_country') }}">Downloads by Country</a><br/>

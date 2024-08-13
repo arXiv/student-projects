@@ -8,7 +8,7 @@ def index():
 
 @main.route('/hourly_usage', methods=['GET'])
 def render_hourly_usage():
-    return render_template('hourly_usage.html') 
+    return render_template('hourly_usage_rates.html') 
 
 """ @main.route('/monthly_downloads', methods=['GET'])
 def render_monthly_downloads():
@@ -21,3 +21,7 @@ def render_monthly_submissions():
 @main.route('/downloads_by_country', methods=['GET'])
 def render_downloads_by_country():
     return render_template('downloads_by_country.html')
+
+@main.route('/downloads_by_category', methods=['GET'])
+def render_downloads_by_category():
+    return render_template('downloads_by_category.html')

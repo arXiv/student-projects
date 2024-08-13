@@ -16,7 +16,7 @@
     <div id="chart"></div>
 
     <script>
-        fetch('/api/')
+        fetch('/api/get_primary_count_by_category')
             .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
@@ -30,14 +30,15 @@
                         return date.toLocaleDateString('en-US', options);
                     }
 
-                const formattedMonths = data.month.map(formatISOToMonthYear);
+                const formattedMonths = data.map(d => formatISOToMonthYear(d.start_dttm))
                 const categories = data.map(d => d.category);
                 const totals = data.map(d => d.total_primary_count);
 
                 const trace = {
-                    type: 'line',
-
-                    text: "a",
+                    type: 'bar',
+                    x: categories,
+                    y: totals,
+                    text: categories.map((category, i) => `${category}: ${totals[i]} Downloads`),
                     hoverinfo: 'text',
                     colorscale: [
                                 [0, '#FFD700'],
@@ -56,9 +57,9 @@
                 };
 
                 const layout = {
-                    title: 'Total Downloads by Country',
+                    title: 'Total Downloads by Category',
                     xaxis:{
-                        title: "Date"
+                        title: "Category"
                     },
                     yaxis:{
                         title: "Downloads"

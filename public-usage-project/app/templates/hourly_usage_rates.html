@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Monthly Downloads</title>
+    <title>Hourly Usage</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         body, html {
@@ -28,7 +28,7 @@
     </div>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            fetch(window.location.origin + "/api/get_hourly_usage")
+            fetch(window.location.origin + "/api/get_hourly_primary_count")
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
@@ -43,8 +43,8 @@
                         return date.toLocaleDateString('en-US', options);
                     }
 
-                    const formattedMonths = data.month.map(formatISOToMonthYear);
-                    const connections = data.connections;
+                    const formattedMonths = data.map(d => formatISOToMonthYear(d.start_dttm))
+                    const connections = data.map(d => d.total_primary_count);
 
                     const trace1 = {
                         x: data.month,
@@ -74,7 +74,7 @@
                         xaxis: {
                             title: 'Hour',
                             tickmode: 'array',
-                            tickvals: data.hour.map(date => new Date(date).toISOString().substring(11, 13)),
+                            tickvals: formattedMonths,
                         },
                         yaxis: {
                             title: {text: 'Connections', automargin: true},
