@@ -24,9 +24,16 @@
                     return response.json();
                 })
             .then(data => {
+                function formatISOToMonthYear(isoString) {
+                        const date = new Date(isoString);
+                        const options = { year: 'numeric', month: 'long' };
+                        return date.toLocaleDateString('en-US', options);
+                    }
+
+                const formattedMonths = data.month.map(formatISOToMonthYear);
                 const categories = data.map(d => d.category);
                 const totals = data.map(d => d.total_primary_count);
-                const date = data.map(d=>d.date);
+
                 const trace = {
                     type: 'line',
 
