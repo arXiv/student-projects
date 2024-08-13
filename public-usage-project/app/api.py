@@ -30,6 +30,32 @@ class HourlyDownloadData(Base):
     cross_count = Column(Integer, nullable=False)
     start_dttm = Column(DateTime, nullable=False)
 
+# ORM model for the hourly download data sheet 
+class MonthlyDownloadData(Base):
+    __tablename__ = 'monthly_download_data' 
+    # We don't actually have an ID column in the table, but we need some sort of primary key for the ORM.
+    id = Column(Integer, primary_key=True, autoincrement=True) 
+    country = Column(String, nullable=False)
+    download_type = Column(String, nullable=False)
+    archive = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    primary_count = Column(Integer, nullable=False)
+    cross_count = Column(Integer, nullable=False)
+    start_dttm = Column(DateTime, nullable=False)
+
+# ORM model for the hourly download data sheet 
+class MonthlySubmissionData(Base):
+    __tablename__ = 'monthly_submission_data' 
+    # We don't actually have an ID column in the table, but we need some sort of primary key for the ORM.
+    id = Column(Integer, primary_key=True, autoincrement=True) 
+    country = Column(String, nullable=False)
+    download_type = Column(String, nullable=False)
+    archive = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    primary_count = Column(Integer, nullable=False)
+    cross_count = Column(Integer, nullable=False)
+    start_dttm = Column(DateTime, nullable=False)
+
 @api.route('/get_hourly_primary_count', methods=['GET'])
 def get_hourly_downloads():
     """
@@ -147,26 +173,14 @@ def get_primary_count_by_category():
 
         JSON error indicating otherwise.
     """
-    # mapper dict for subsumed categories.
+    # Use the canonical alias for each category if applicable.
     category_mapping = {
-    'cmp-lg': 'cs.CL',
-    'adap-org': 'nlin.AO',
-    'comp-gas': 'nlin.CG',
-    'chao-dyn': 'nlin.CD',
-    'solv-int': 'nlin.SI',
-    'patt-sol': 'nlin.PS',
-    'alg-geom': 'math.AG',
-    'dg-ga': 'math.DG',
-    'funct-an': 'math.FA',
-    'q-alg': 'math.QA',
-    'mtrl-th': 'cond-mat.mtrl-sci',
-    'supr-con': 'cond-mat.supr-con',
-    'acc-phys': 'physics.acc-ph',
-    'ao-sci': 'physics.ao-ph',
-    'atom-ph': 'physics.atom-ph',
-    'bayes-an': 'physics.data-an',
-    'chem-ph': 'physics.chem-ph',
-    'plasm-ph': 'physics.plasm-ph'
+    'math.MP': 'math-ph',
+    'stat.TH': 'math.ST',
+    'math.IT': 'cs.IT',
+    'q-fin.EC': 'econ.GN',
+    'cs.SY': 'eess.SY',
+    'cs.NA': 'math.NA'
     }
 
     session = Session()
@@ -224,22 +238,54 @@ def get_primary_count_by_archive():
         
         JSON Error in the case something fails. 
     """
+    # mapper dict for subsumed Archives.
+    archive_mapping = {
+    'cmp-lg': 'cs.CL',
+    'adap-org': 'nlin.AO',
+    'comp-gas': 'nlin.CG',
+    'chao-dyn': 'nlin.CD',
+    'solv-int': 'nlin.SI',
+    'patt-sol': 'nlin.PS',
+    'alg-geom': 'math.AG',
+    'dg-ga': 'math.DG',
+    'funct-an': 'math.FA',
+    'q-alg': 'math.QA',
+    'mtrl-th': 'cond-mat.mtrl-sci',
+    'supr-con': 'cond-mat.supr-con',
+    'acc-phys': 'physics.acc-ph',
+    'ao-sci': 'physics.ao-ph',
+    'atom-ph': 'physics.atom-ph',
+    'bayes-an': 'physics.data-an',
+    'chem-ph': 'physics.chem-ph',
+    'plasm-ph': 'physics.plasm-ph'
+    }
+
     session = Session()
     try:
+        # Summate total primary counts based on archive.
         result = (
             session.query(
-                HourlyDownloadData.archive,
+                HourlyDownloadData.category,
                 func.sum(HourlyDownloadData.primary_count).label('total_primary_count')
             )
             .group_by(HourlyDownloadData.archive)
             .all()
         )
 
+        # Convert result to a dictionary for easier manipulation
+        archive_counts = {archive: total for archive, total in result}
+
+        # Subsuming the first item into the corresponding archive
+        for item, main_archive in archive_mapping.items():
+            if item in archive_counts:
+                # Add the count of the first item to the main archive
+                archive_counts[main_archive] = archive_counts.get(main_archive, 0) + archive_counts[item]
+                # Remove the first item from the counts
+                del archive_counts[item]
+
         # Format result for JSON response
-        formatted_result = [
-            {"archive": archive, "total_primary_count": total}
-            for archive, total in result
-        ]
+        formatted_result = [{"Archive": archive, "total_primary_count": total} for archive, total in archive_counts.items()]
+        
         return jsonify(formatted_result)
 
     except Exception as e:
