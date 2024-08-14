@@ -16,7 +16,7 @@
     <div id="chart"></div>
 
     <script>
-        fetch('/api/get_primary_count_by_category')
+        fetch('/api/get_data?model=hourly&group_by=category')
             .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);

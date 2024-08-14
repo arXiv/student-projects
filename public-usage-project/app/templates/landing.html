@@ -31,10 +31,10 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var baseUrl = window.location.origin;
-      document.getElementById("api-downloads-by-hour").href = baseUrl + "/api/get_hourly_primary_count";
-      document.getElementById("api-downloads-by-country").href = baseUrl + "/api/get_primary_count_by_country";
-      document.getElementById("api-downloads-by-archive").href = baseUrl +"/api/get_primary_count_by_archive";
-      document.getElementById("api-downloads-by-category").href = baseUrl + "/api/get_primary_count_by_category";
+      document.getElementById("api-downloads-by-hour").href = baseUrl + "/api/get_data?model=hourly&group_by=start_dttm";
+      document.getElementById("api-downloads-by-country").href = baseUrl + "/api/get_data?model=hourly&group_by=country";
+      document.getElementById("api-downloads-by-archive").href = baseUrl +"/api/get_data?model=hourly&group_by=archive";
+      document.getElementById("api-downloads-by-category").href = baseUrl + "/api/get_data?model=hourly&group_by=category";
       document.getElementById("logged-in-status").href = baseUrl + "/api/auth/status";
     });
   </script>

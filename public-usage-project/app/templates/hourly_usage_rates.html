@@ -28,7 +28,7 @@
     </div>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            fetch(window.location.origin + "/api/get_hourly_primary_count")
+            fetch(window.location.origin + "/api/get_data?model=hourly&group_by=start_dttm")
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);

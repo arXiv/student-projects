@@ -1,245 +1,34 @@
 import os
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_cors import CORS
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, func
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
+from app.models import get_model
 
 api = Blueprint('api', __name__)
-CORS(api, resources={r"/*": {"origins": "*"}})  # Allow all origins
+CORS(api, resources={r"/*": {"origins": "*"}})
 
 # Load environment variables
 load_dotenv()
 
 # SQLAlchemy setup
-DATABASE_URI = os.getenv('DATABASE_URI')  # Change as needed for testing.
+DATABASE_URI = os.getenv('DATABASE_URI')
 engine = create_engine(DATABASE_URI)
 Session = sessionmaker(bind=engine)
-Base = declarative_base()
 
-# ORM model for the hourly download data sheet 
-class HourlyDownloadData(Base):
-    __tablename__ = 'hourly_download_data' 
-    # We don't actually have an ID column in the table, but we need some sort of primary key for the ORM.
-    id = Column(Integer, primary_key=True, autoincrement=True) 
-    country = Column(String, nullable=False)
-    download_type = Column(String, nullable=False)
-    archive = Column(String, nullable=False)
-    category = Column(String, nullable=False)
-    primary_count = Column(Integer, nullable=False)
-    cross_count = Column(Integer, nullable=False)
-    start_dttm = Column(DateTime, nullable=False)
-
-# ORM model for the hourly download data sheet 
-class MonthlyDownloadData(Base):
-    __tablename__ = 'monthly_download_data' 
-    # We don't actually have an ID column in the table, but we need some sort of primary key for the ORM.
-    id = Column(Integer, primary_key=True, autoincrement=True) 
-    country = Column(String, nullable=False)
-    download_type = Column(String, nullable=False)
-    archive = Column(String, nullable=False)
-    category = Column(String, nullable=False)
-    primary_count = Column(Integer, nullable=False)
-    cross_count = Column(Integer, nullable=False)
-    start_dttm = Column(DateTime, nullable=False)
-
-# ORM model for the hourly download data sheet 
-class MonthlySubmissionData(Base):
-    __tablename__ = 'monthly_submission_data' 
-    # We don't actually have an ID column in the table, but we need some sort of primary key for the ORM.
-    id = Column(Integer, primary_key=True, autoincrement=True) 
-    country = Column(String, nullable=False)
-    download_type = Column(String, nullable=False)
-    archive = Column(String, nullable=False)
-    category = Column(String, nullable=False)
-    primary_count = Column(Integer, nullable=False)
-    cross_count = Column(Integer, nullable=False)
-    start_dttm = Column(DateTime, nullable=False)
-
-@api.route('/get_hourly_primary_count', methods=['GET'])
-def get_hourly_downloads():
-    """
-    Route for retrieving hourly primary counts downloads aggregated by start_dttm.
-
-    Args: N/A
-
-    Returns: 
-        JSON with aggregated hourly primary counts, something along the lines of 
-        
-        [
-            {
-            "start_dttm": "2024-08-05 16:00:00",
-            "total_primary_count": "288879"
-            },
-            {
-            "start_dttm": "2024-08-06 13:00:00",
-            "total_primary_count": "253109"
-            },...
-        ]
-
-        JSON Error in the case something fails. 
-    """
-    session = Session()
-    try:
-        # Summate total primary counts based on date.
-        result = (
-            session.query(
-                HourlyDownloadData.start_dttm,
-                func.sum(HourlyDownloadData.primary_count).label('total_primary_count')
-            )
-            .group_by(HourlyDownloadData.start_dttm)
-            .all()
-        )
-
-        # Format result for JSON response
-        formatted_result = [
-            {"start_dttm": str(start_dttm), "total_primary_count": total}
-            for start_dttm, total in result
-        ]
-        return jsonify(formatted_result)
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 502
-    finally:
-        session.close()
-
-
-@api.route('/get_primary_count_by_country', methods=['GET'])
-def get_primary_count_by_country():
-    """
-    Route for retrieving total primary counts aggregated by country.
-
-    Args: N/A
-
-    Returns: 
-        JSON with aggregated primary counts by country, something along the lines of 
-        [
-            {
-            "country": "united kingdom",
-            "total_primary_count": "58634"
-            },
-            {
-                "country": "united states",
-                "total_primary_count": "272491"
-            },...
-        ]
-        
-        JSON Error in the case something fails. 
-    """
-    session = Session()
-
-    try:
-        # Summate total primary counts based on country.
-        result = (
-            session.query(
-                HourlyDownloadData.country,
-                func.sum(HourlyDownloadData.primary_count).label('total_primary_count')
-            )
-            .group_by(HourlyDownloadData.country)
-            .all()
-        )
-
-        # Format result for JSON response
-        formatted_result = [
-            {"country": country, "total_primary_count": total}
-            for country, total in result
-        ]
-        return jsonify(formatted_result)
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 502
-    finally:
-        session.close()
-
-
-@api.route('/get_primary_count_by_category', methods=['GET'])
-def get_primary_count_by_category():
-    """
-    Route for retrieving total primary counts aggregated by category.
-    The first item in the category mapping will be subsumed into the corresponding category.
-
-    Returns: 
-        JSON with aggregated primary counts by country, something along the lines of 
-        [
-            {
-                "category": "astro-ph",
-                "total_primary_count": "11949"
-            },
-            {
-                "category": "astro-ph.CO",
-                "total_primary_count": "15245"
-            },...
-        ]
-
-        JSON error indicating otherwise.
-    """
-    # Use the canonical alias for each category if applicable.
-    category_mapping = {
+# Category alias mapping dict
+category_mapping = {
     'math.MP': 'math-ph',
     'stat.TH': 'math.ST',
     'math.IT': 'cs.IT',
     'q-fin.EC': 'econ.GN',
     'cs.SY': 'eess.SY',
     'cs.NA': 'math.NA'
-    }
+}
 
-    session = Session()
-    try:
-        # Summate total primary counts based on category.
-        result = (
-            session.query(
-                HourlyDownloadData.category,
-                func.sum(HourlyDownloadData.primary_count).label('total_primary_count')
-            )
-            .group_by(HourlyDownloadData.category)
-            .all()
-        )
-
-        # Convert result to a dictionary for easier manipulation
-        category_counts = {category: total for category, total in result}
-
-        # Subsuming the first item into the corresponding category
-        for item, main_category in category_mapping.items():
-            if item in category_counts:
-                # Add the count of the first item to the main category
-                category_counts[main_category] = category_counts.get(main_category, 0) + category_counts[item]
-                # Remove the first item from the counts
-                del category_counts[item]
-
-        # Format result for JSON response
-        formatted_result = [{"category": category, "total_primary_count": total} for category, total in category_counts.items()]
-        
-        return jsonify(formatted_result)
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 502
-    finally:
-        session.close()
-
-@api.route('/get_primary_count_by_archive', methods=['GET'])
-def get_primary_count_by_archive():
-    """
-    Route for retrieving total primary counts aggregated by archive.
-
-    Args: N/A
-
-    Returns: 
-        JSON with aggregated primary counts by archive, something along the lines of 
-        [
-            {
-                "archive": "astro-ph",
-                "total_primary_count": "99775"
-            },
-            {
-                "archive": "cond-mat",
-                "total_primary_count": "87770"
-            },...
-        ]
-        
-        JSON Error in the case something fails. 
-    """
-    # mapper dict for subsumed Archives.
-    archive_mapping = {
+# Subsumed archive mapping dict
+archive_mapping = {
     'cmp-lg': 'cs.CL',
     'adap-org': 'nlin.AO',
     'comp-gas': 'nlin.CG',
@@ -258,53 +47,117 @@ def get_primary_count_by_archive():
     'bayes-an': 'physics.data-an',
     'chem-ph': 'physics.chem-ph',
     'plasm-ph': 'physics.plasm-ph'
-    }
+}
+
+def query_model(model_name, group_by_column, by_year=False):
+    """
+    Query the specified model to aggregate data by a given column, optionally grouped by year.
+
+    Args:
+        model_name (str): The name of the model to query.
+        group_by_column (str): The column to group by.
+        by_year (bool): Whether to further group the data by year.
+
+    Returns:
+        list: A list of dictionaries containing the grouped data and aggregated results.
+    
+    Raises:
+        ValueError: If the model name is invalid.
+    """
+    model = get_model(model_name)
+    if model is None:
+        raise ValueError("Invalid model name")
 
     session = Session()
+    
     try:
-        # Summate total primary counts based on archive.
-        result = (
-            session.query(
-                HourlyDownloadData.category,
-                func.sum(HourlyDownloadData.primary_count).label('total_primary_count')
-            )
-            .group_by(HourlyDownloadData.archive)
-            .all()
-        )
+        group_by_attr = getattr(model, group_by_column)
+        year_expr = func.year(model.start_dttm) if by_year else None
 
-        # Convert result to a dictionary for easier manipulation
-        archive_counts = {archive: total for archive, total in result}
+        # Create and run the query on our model
+        query = session.query(
+            group_by_attr,
+            # Currently we're only summating primary counts, though this can be addressed later if needed.
+            func.sum(model.primary_count),
+            year_expr.label('year') if by_year else None
+        ).group_by(group_by_attr, year_expr if by_year else None).all()
 
-        # Subsuming the first item into the corresponding archive
-        for item, main_archive in archive_mapping.items():
-            if item in archive_counts:
-                # Add the count of the first item to the main archive
-                archive_counts[main_archive] = archive_counts.get(main_archive, 0) + archive_counts[item]
-                # Remove the first item from the counts
-                del archive_counts[item]
+        # Create a mapping dictionary
+        mapped_counts = {}
 
-        # Format result for JSON response
-        formatted_result = [{"Archive": archive, "total_primary_count": total} for archive, total in archive_counts.items()]
+        # Archive/Category mapping and combination logic
+        for group_by_value, total, year in query:
+            # Convert to string and apply mapping if applicable
+            group_by_value_str = str(group_by_value)
+            if group_by_column == 'category':
+                group_by_value_str = category_mapping.get(group_by_value_str, group_by_value_str)
+            elif group_by_column == 'archive':
+                group_by_value_str = archive_mapping.get(group_by_value_str, group_by_value_str)
+
+            key = (group_by_value_str, year) if by_year else (group_by_value_str, None)
+            
+            if key in mapped_counts:
+                mapped_counts[key] += total
+            else:
+                mapped_counts[key] = total
         
-        return jsonify(formatted_result)
+        # Convert the mapped counts into our desired format
+        formatted_result = []
+        for (group_by_value, year), total in mapped_counts.items():
+            result_dict = {
+                group_by_column: group_by_value,
+                'total_primary_count': total
+            }
+            if by_year and year is not None:
+                result_dict['year'] = year
+            
+            formatted_result.append(result_dict)
+        
+        return formatted_result
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 502
+        session.rollback()
+        raise e
     finally:
         session.close()
 
+@api.route('/get_data', methods=['GET'])
+def get_data():
+    """
+    API endpoint to get aggregated data from the specified model.
 
+    Query Parameters:
+        model (str): 
+            The name of the model to query.
+        group_by (str): 
+            The column to group by.
+        by_year (bool): 
+            Whether to group the data by year.
+
+    Returns:
+        JSON: Aggregated data or an error message if parameters are missing or invalid.
+    """
+    # Take in our args
+    model_name = request.args.get('model')
+    group_by_column = request.args.get('group_by')
+    by_year = request.args.get('by_year', 'false').lower() == 'true'
+
+    # Empty parameter error handling
+    if not model_name or not group_by_column:
+        return jsonify({'error': 'Missing required parameters'}), 400
+
+    # attempt to query the model for the information, with 2 possible error handlers.
+    try:
+        data = query_model(model_name, group_by_column, by_year)
+        return jsonify(data)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @api.route('/auth/status', methods=['GET'])
 def auth_status():
     """
     Route for checking the logged-in status of the user.
-
-    Args: N/A
-
-    Returns: 
-        JSON indicating whether the user is logged in.
     """
-    
-    # TODO: PROVIDE FUNCTIONALITY
     return jsonify({'logged_in': False}), 501
