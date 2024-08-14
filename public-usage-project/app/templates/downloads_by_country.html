@@ -81,7 +81,7 @@
                     },
                 };
 
-                Plotly.newPlot('map', [trace], layout, {showLink: false});
+                Plotly.react('map', [trace], layout, {showLink: false});
             })
             .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);
