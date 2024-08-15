@@ -31,6 +31,11 @@
       padding: 20px;
     }
 
+    .gallery-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
     .image-gallery {
       display: flex;
       gap: 100px;
@@ -71,6 +76,11 @@
       display: block;
     }
 
+    .dropdown h3 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
     .dropdown-content a:hover {
       background-color: #f1f1f1;
     }
@@ -102,35 +112,41 @@
 <body>
   <div class="header">
     <img src="{{ url_for('static', filename='images/gagArxivLogo.jpg') }}" alt="Logo">
-    <h1>Very Real Landing Page</h1>
+    <h1>Stats home</h1>
   </div>
 
   <div class="container">
-    <h3>Landing Page with Graph Sections</h3>
+    <div class="gallery-header">
+      <h2>Graph Home</h2>
+      <p>Hover over the options below to view different types of graphs.</p>
+    </div>
 
     <div class="image-gallery">
       <div class="dropdown">
+        <h3>Geographical graphs</h3>
         <img src="{{ url_for('static', filename='images/geographs.jpg') }}" alt="GeoGraphs">
         <div class="dropdown-content">
           <a href="{{ url_for('main.render_downloads_by_country') }}">Total downloads by Country</a><br/>
-          <a href="#">I don't exist yet :&#40;</a>
-          <a href="#">Neither do I :&#40;</a>
+          <a href="#">To be implemented</a>
+          <a href="#">To be implemented</a>
         </div>
       </div>
       <div class="dropdown">
+        <h3>Global statistics</h3>
         <img src="{{ url_for('static', filename='images/globalGraphs.jpg') }}" alt="GlobalGraphs">
         <div class="dropdown-content">
           <a href="{{ url_for('main.render_hourly_usage') }}">Global Hourly Usage Graph</a><br/>
-          <a href="#">I don't exist yet :&#40;</a>
-          <a href="#">Neither do I :&#40;</a>
+          <a href="#">To be implemented</a>
+          <a href="#">To be implemented</a>
         </div>
       </div>
       <div class="dropdown">
+        <h3>Graphs by Archive/Categories</h3>
         <img src="{{ url_for('static', filename='images/sectionedGraphs.jpg') }}" alt="SectionedGraphs">
         <div class="dropdown-content">
           <a href="{{ url_for('main.render_downloads_by_category') }}">Total Downloads by Category</a><br/>
-          <a href="#">I don't exist yet :&#40;</a>
-          <a href="#">Neither do I :&#40;</a>
+          <a href="#">To be implemented</a>
+          <a href="#">To be implemented</a>
         </div>
       </div>
     </div>
@@ -160,3 +176,4 @@
 </body>
 
 </html>
+
