@@ -2,38 +2,157 @@
 <html>
 
 <head>
-  <title>Redirector</title>
+  <title>Landing Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      background-color: #b31b1b;
+      color: white;
+      display: flex;
+      align-items: center;
+    }
+
+    .header img {
+      height: 100px;
+      margin-left: 20px;
+      margin-right: 20px; 
+      object-fit: contain; 
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .image-gallery {
+      display: flex;
+      gap: 100px;
+    }
+
+    .image-gallery .dropdown {
+      position: relative;
+    }
+
+    .image-gallery img {
+      width: 200px;
+      height: 200px;
+      object-fit: cover;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+
+    .image-gallery img:hover {
+      opacity: 0.7;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+      border: 1px solid #ddd;
+      top: 100%;
+      left: 0;
+    }
+
+    .dropdown-content a {
+      color: black;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #f1f1f1;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .admin-tools {
+      margin-top: 20px;
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+      text-align: center;
+    }
+
+    .admin-tools a {
+      display: block;
+      margin-bottom: 5px;
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .admin-tools a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 
 <body>
-  <h3>
-    Simple redirector page.
-  </h3>
-  <p>Global Graphs:<br/>
-    <a href="{{ url_for('main.render_hourly_usage') }}">Hourly Usage Graph</a><br/>
-  </p>
-  <p>Archive/Category Graphs:<br/>
-    <a href="{{ url_for('main.render_downloads_by_category') }}">Downloads by Category</a><br/>
-  </p>
-  <p>Geomaps:<br/>
-    <a href="{{ url_for('main.render_downloads_by_country') }}">Downloads by Country</a><br/>
-  </p>
-  <p>Test real database fetch API here:<br/>
-    <a id="api-downloads-by-hour" href="#">Get downloads by Hour</a><br/>
-    <a id="api-downloads-by-country" href="#">Get downloads by Country</a><br/>
-    <a id="api-downloads-by-archive" href="#">Get downloads by Archive</a><br/>
-    <a id="api-downloads-by-category" href="#">Get downloads by Category</a><br/>
+  <div class="header">
+    <img src="{{ url_for('static', filename='images/gagArxivLogo.jpg') }}" alt="Logo">
+    <h1>Very Real Landing Page</h1>
+  </div>
 
-  </p>
-  <p>Am I logged in?:<br/>
-    <a id="logged-in-status" href="#">Click me and find out</a><br/>
-  </p>
+  <div class="container">
+    <h3>Landing Page with Graph Sections</h3>
+
+    <div class="image-gallery">
+      <div class="dropdown">
+        <img src="{{ url_for('static', filename='images/geographs.jpg') }}" alt="GeoGraphs">
+        <div class="dropdown-content">
+          <a href="{{ url_for('main.render_downloads_by_country') }}">Total downloads by Country</a><br/>
+          <a href="#">I don't exist yet :&#40;</a>
+          <a href="#">Neither do I :&#40;</a>
+        </div>
+      </div>
+      <div class="dropdown">
+        <img src="{{ url_for('static', filename='images/globalGraphs.jpg') }}" alt="GlobalGraphs">
+        <div class="dropdown-content">
+          <a href="{{ url_for('main.render_hourly_usage') }}">Global Hourly Usage Graph</a><br/>
+          <a href="#">I don't exist yet :&#40;</a>
+          <a href="#">Neither do I :&#40;</a>
+        </div>
+      </div>
+      <div class="dropdown">
+        <img src="{{ url_for('static', filename='images/sectionedGraphs.jpg') }}" alt="SectionedGraphs">
+        <div class="dropdown-content">
+          <a href="{{ url_for('main.render_downloads_by_category') }}">Total Downloads by Category</a><br/>
+          <a href="#">I don't exist yet :&#40;</a>
+          <a href="#">Neither do I :&#40;</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-tools">
+      <p>Test real database fetch API here:</p>
+      <a id="api-downloads-by-hour" href="#">Get downloads by Hour</a>
+      <a id="api-downloads-by-country" href="#">Get downloads by Country</a>
+      <a id="api-downloads-by-archive" href="#">Get downloads by Archive</a>
+      <a id="api-downloads-by-category" href="#">Get downloads by Category</a>
+
+      <p>Am I logged in?:</p>
+      <a id="logged-in-status" href="#">Click me and find out</a>
+    </div>
+  </div>
+
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var baseUrl = window.location.origin;
       document.getElementById("api-downloads-by-hour").href = baseUrl + "/api/get_data?model=hourly&group_by=start_dttm";
       document.getElementById("api-downloads-by-country").href = baseUrl + "/api/get_data?model=hourly&group_by=country";
-      document.getElementById("api-downloads-by-archive").href = baseUrl +"/api/get_data?model=hourly&group_by=archive";
+      document.getElementById("api-downloads-by-archive").href = baseUrl + "/api/get_data?model=hourly&group_by=archive";
       document.getElementById("api-downloads-by-category").href = baseUrl + "/api/get_data?model=hourly&group_by=category";
       document.getElementById("logged-in-status").href = baseUrl + "/api/auth/status";
     });
