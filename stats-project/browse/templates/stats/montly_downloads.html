@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Hourly Usage</title>
+    <title>Monthly Downloads</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         body, html {
@@ -23,12 +23,12 @@
 </head>
 <body>
     <div id="center-container">
-        <div id="myplot-connections" style="width: 1000px; height: 500px;"></div>
+        <div id="myplot-downloads" style="width: 1000px; height: 500px;"></div>
         <div id="myplot-range" style="width: 1000px; height: 150px;"></div>
     </div>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            fetch(window.location.origin + "/api/get_data?model=hourly&group_by=start_dttm")
+            fetch(window.location.origin + "/api/get_monthly_downloads")
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
@@ -43,16 +43,16 @@
                         return date.toLocaleDateString('en-US', options);
                     }
 
-                    const formattedMonths = data.map(d => formatISOToMonthYear(d.start_dttm))
-                    const connections = data.map(d => d.total_primary_count);
-
+                    const formattedMonths = data.month.map(formatISOToMonthYear);
+                    const downloads = data.data;
+                    console.log(data)
                     const trace1 = {
                         x: data.month,
-                        y: connections,
+                        y: downloads,
                         type: 'bar',
-                        hovertemplate: '<b>Month: %{x}</b><br>Usage: %{y}<extra></extra>',
+                        hovertemplate: '<b>Month: %{x}</b><br>Downloads: %{y}<extra></extra>',
                         marker: {
-                            color: connections, // Use download values for color gradient
+                            color: downloads, // Use download values for color gradient
                             colorscale: [
                                 [0, '#FFD700'],
                                 [0.125, '#FFC300'],
@@ -69,22 +69,21 @@
                     };
 
                     const layout1 = {
-                        automargin: true,
-                        title: "Hourly Connections",
+                        title: "Monthly Downloads",
                         xaxis: {
-                            title: 'Hour',
-                            tickmode: 'array',
-                            tickvals: formattedMonths,
+                            title: 'Month',
+                            type: 'date',
+                            tickformat: '%Y-%m',
                         },
                         yaxis: {
-                            title: {text: 'Connections', automargin: true},
+                            title: 'Downloads',
                             ticks: 'outside',
                             tickformat: ','
                         },
                         showlegend: false
                     };
 
-                    Plotly.newPlot('myplot-connections', [trace1], layout1);
+                    Plotly.newPlot('myplot-downloads', [trace1], layout1);
                 })
                 .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);

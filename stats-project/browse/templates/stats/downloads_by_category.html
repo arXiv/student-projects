@@ -32,7 +32,7 @@
 
                 const formattedMonths = data.map(d => formatISOToMonthYear(d.start_dttm))
                 const categories = data.map(d => d.category);
-                const totals = data.map(d => d.total_primary_count);
+                const totals = data.map(d => d.data);
 
                 const trace = {
                     type: 'bar',

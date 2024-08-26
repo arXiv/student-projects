@@ -25,7 +25,7 @@
                 })
             .then(data => {
                 const countries = data.map(d => d.country);
-                const totals = data.map(d => d.total_primary_count);
+                const totals = data.map(d => d.data);
                 // Object.defineProperty(String.prototype, 'capitalize' , {
                 //     value: function(){
                 //         return this.charAt(0).toUpperCase() + this.slice(1);

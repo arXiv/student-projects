@@ -1,6 +1,6 @@
 from flask import Flask
 from config import config
-from app.api import api
+from browse.api import api
 
 from flask_cors import CORS
 
@@ -11,10 +11,10 @@ def create_app(app_config='development'):
     CORS(app)
 
     # Apply config
-    app.config.from_object(config[app_config])
+    #app.config.from_object(config[app_config])
 
     # Register blueprints
-    from app.main.routes import main
+    from browse.routes.ui import main
     app.register_blueprint(main)
 
     app.register_blueprint(api, url_prefix='/api')
