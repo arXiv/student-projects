@@ -4,6 +4,7 @@
 This folder intends to hold the core functionalities behind the statistics page on Arxiv, as an independent package as opposed to its eventual implementation to Arxiv Browse and as a standalone Cloud Run. 
 
 ## Prerequisites
+This project is reliant on the following libraries to function: 
 - Flask 3.0.3
 - Flask-Cors 4.0.1
 - python-dotenv 0.21.0
@@ -12,8 +13,7 @@ This folder intends to hold the core functionalities behind the statistics page 
 - mysqlclient 2.2.4
   
 ## Configure the Database URI as an environment variable
-To ensure the app and API are able to connect to the database correctly, create a `.env` file in the root of `stats-project`, with a variable named `DATABASE_URI`, a mySQL URI to your database. If you are connecting to a cloudSQL database, be sure to run the proxy. 
-Scripts to automatically set up such a database locally for convenience are in development. 
+To ensure the app and API are able to connect to the database correctly, create a `.env` file in the root of `stats-project`, with a variable named `DATABASE_URI`, a mySQL URI to your database. If you are connecting to a cloudSQL database, be sure to run the proxy. If you intend to run this project within a docker container, ensure the URI uses a TCP connection, and if the URI needs to connect to a service on the host machine, replace part of the IP address (but not the port!) to host.docker.internal.
 
 ## Run the Flask Application with Python
 In a command line terminal, navigate to 'stats-project', and run the command 
@@ -21,7 +21,11 @@ In a command line terminal, navigate to 'stats-project', and run the command
 This should start the app which should be accessible on http://127.0.0.1:8080/ in your browser.
 
 ## Run with Docker
-Requisite scripts and functionality for this are currently under development.
+There is a dockerfile provided in the root of the project. To build an image from it, navigate to the stats-project folder within a command line terminal and build it using commands 
+```docker build -t arxiv-stats-api-image .``` and
+```docker run -p 8080:8080 arxiv-stats-api-image```
+This should start the app which should be accessible on http://127.0.0.1:8080/ in your browser.
+
 
 ## Frontend
 Thie project features a mock interface for ease of accessing our demo graphs, whose files are contains in `browse/templates`:
