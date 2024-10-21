@@ -49,7 +49,7 @@ The Excel file contains a table with the following columns:
 The JSON file provides a structured output with the following format:
 
 ```
-json复制代码[
+[
   {
     "Archive": "archive_name.tar.gz",
     "Organizations": [
