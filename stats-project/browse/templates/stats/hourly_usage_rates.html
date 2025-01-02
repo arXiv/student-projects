@@ -28,7 +28,10 @@
     </div>
     <script type="text/javascript">
         document.addEventListener("DOMContentLoaded", function() {
-            fetch(window.location.origin + "/api/get_data?model=hourly&group_by=start_dttm")
+            // Get current date in YYYY-MM-DD format
+            today = new Date().toISOString().split('T')[0]; 
+            
+            fetch(window.location.origin + `/api/get_data?model=hourly&group_by=start_dttm&start_date=${today}`)
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
@@ -42,15 +45,15 @@
                         const options = { year: 'numeric', month: 'long' };
                         return date.toLocaleDateString('en-US', options);
                     }
-
+    
                     const formattedMonths = data.map(d => formatISOToMonthYear(d.start_dttm))
                     const connections = data.map(d => d.data);
-
+    
                     const trace1 = {
                         x: data.month,
                         y: connections,
                         type: 'bar',
-                        hovertemplate: '<b>Month: %{x}</b><br>Usage: %{y}<extra></extra>',
+                        hovertemplate: '<b>Hour: %{x}</b><br>Usage/Downloads: %{y}<extra></extra>',
                         marker: {
                             color: connections, // Use download values for color gradient
                             colorscale: [
@@ -67,7 +70,7 @@
                             showscale: false
                         }
                     };
-
+    
                     const layout1 = {
                         automargin: true,
                         title: "Hourly Connections",
@@ -83,7 +86,7 @@
                         },
                         showlegend: false
                     };
-
+    
                     Plotly.newPlot('myplot-connections', [trace1], layout1);
                 })
                 .catch(error => {

@@ -18,7 +18,7 @@ DATABASE_URI = os.getenv('DATABASE_URI')
 engine = create_engine(DATABASE_URI)
 Session = sessionmaker(bind=engine)
 
-def query_model(model_name: str, group_by_column: str, second_group_by_column: str = None, time_group: str = None) -> list:
+def query_model(model_name: str, group_by_column: str, second_group_by_column: str = None, time_group: str = None, start_date: str = None) -> list:
     """
     Query the specified model to aggregate data by a given column, optionally grouped by year, month, day, or hour.
     
@@ -79,6 +79,10 @@ def query_model(model_name: str, group_by_column: str, second_group_by_column: s
             second_group_by_attr if second_group_by_column else group_by_attr,
             time_expr if time_group else group_by_attr
         )
+
+         # Filter by start_date if provided
+        if start_date:
+            query = query.filter(func.date(model.start_dttm) == start_date)
 
         # Fetch our results from the database
         result = query.all()
@@ -179,9 +183,10 @@ def get_data():
     # Optional parameters
     second_group_by_column = request.args.get('second_group_by', None)
     time_group = request.args.get('time_group', None)
+    start_date = request.args.get('start_date', None)
 
     try:
-        data = query_model(model_name, group_by_column, second_group_by_column, time_group)
+        data = query_model(model_name, group_by_column, second_group_by_column, time_group, start_date)
         return jsonify(data)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
