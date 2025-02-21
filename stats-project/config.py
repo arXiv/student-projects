@@ -1,14 +1,19 @@
-class Config(object):
-    TESTING=False
-    DEBUG=False
+class Config:
+    """Base configuration."""
+    TESTING = False
+    DEBUG = False
 
-class Development(Config):
-    DEBUG=True
+class DevelopmentConfig(Config):
+    """Development configuration."""
+    DEBUG = True
 
-class Testing(Config):
-    TESTING=True
+class TestingConfig(Config):
+    """Testing configuration."""
+    TESTING = True
+    DEBUG = True
 
 config = {
-    'development': Development,
-    'testing': Testing
+    'development': DevelopmentConfig,
+    'testing': TestingConfig,
+    'default': DevelopmentConfig
 }

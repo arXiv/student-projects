@@ -1,22 +1,19 @@
 from flask import Flask
 from config import config
 from browse.api import api
-
+from browse.routes.graph_routes import graph_routes
 from flask_cors import CORS
 
-def create_app(app_config='development'):
+
+def create_app(app_config="development"):
     app = Flask(__name__)
 
     # Apply CORS
     CORS(app)
 
-    # Apply config
-    #app.config.from_object(config[app_config])
 
     # Register blueprints
-    from browse.routes.ui import main
-    app.register_blueprint(main)
-
-    app.register_blueprint(api, url_prefix='/api')
+    app.register_blueprint(graph_routes) # the front end, in other words
+    app.register_blueprint(api, url_prefix="/api") # the back end, in other words
 
     return app

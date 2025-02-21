@@ -3,121 +3,19 @@
 
 <head>
   <title>Landing Page</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    .header {
-      background-color: #b31b1b;
-      color: white;
-      display: flex;
-      align-items: center;
-    }
-
-    .header img {
-      height: 100px;
-      margin-left: 20px;
-      margin-right: 20px; 
-      object-fit: contain; 
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .gallery-header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .image-gallery {
-      display: flex;
-      gap: 100px;
-    }
-
-    .image-gallery .dropdown {
-      position: relative;
-    }
-
-    .image-gallery img {
-      width: 200px;
-      height: 200px;
-      object-fit: cover;
-      cursor: pointer;
-      transition: opacity 0.3s;
-    }
-
-    .image-gallery img:hover {
-      opacity: 0.7;
-    }
-
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #f9f9f9;
-      min-width: 160px;
-      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-      z-index: 1;
-      border: 1px solid #ddd;
-      top: 100%;
-      left: 0;
-    }
-
-    .dropdown-content a {
-      color: black;
-      padding: 12px 16px;
-      text-decoration: none;
-      display: block;
-    }
-
-    .dropdown h3 {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    .dropdown-content a:hover {
-      background-color: #f1f1f1;
-    }
-
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
-
-    .admin-tools {
-      margin-top: 20px;
-      border-top: 1px solid #ddd;
-      padding-top: 10px;
-      text-align: center;
-    }
-
-    .admin-tools a {
-      display: block;
-      margin-bottom: 5px;
-      color: #007bff;
-      text-decoration: none;
-    }
-
-    .admin-tools a:hover {
-      text-decoration: underline;
-    }
-  </style>
 </head>
 
 <body>
   <div class="header">
-    <img src="{{ url_for('static', filename='images/gagArxivLogo.jpg') }}" alt="Logo">
-    <h1>Stats home</h1>
+    <h1>Stats demo home</h1>
   </div>
 
   <div class="container">
     <div class="gallery-header">
       <h2>Graph Home</h2>
+      <p>Here are our graphs, with info updated every hour, by the hour!</p>
       <p>Hover over the options below to view different types of graphs.</p>
     </div>
 
@@ -126,7 +24,7 @@
         <h3>Geographical graphs</h3>
         <img src="{{ url_for('static', filename='images/geoGraphs.jpg') }}" alt="GeoGraphs">
         <div class="dropdown-content">
-          <a href="{{ url_for('main.render_downloads_by_country') }}">Total downloads by Country</a><br/>
+          <a href="{{ url_for('graph_routes.render_downloads_by_country') }}">Total downloads by Country</a><br/>
           <a href="#">To be implemented</a>
           <a href="#">To be implemented</a>
         </div>
@@ -135,8 +33,8 @@
         <h3>Global statistics</h3>
         <img src="{{ url_for('static', filename='images/globalGraphs.jpg') }}" alt="GlobalGraphs">
         <div class="dropdown-content">
-          <a href="{{ url_for('main.render_hourly_usage') }}">Global Hourly Usage Graph</a><br/>
-          <a href="#">To be implemented</a>
+          <a href="{{ url_for('graph_routes.render_hourly_usage') }}">Global Hourly Usage Graph</a><br/>
+          <a href="{{ url_for('graph_routes.render_monthly_downloads') }}">Monthly Downloads Graph</a><br/>
           <a href="#">To be implemented</a>
         </div>
       </div>
@@ -144,22 +42,21 @@
         <h3>Graphs by Archive/Categories</h3>
         <img src="{{ url_for('static', filename='images/sectionedGraphs.jpg') }}" alt="SectionedGraphs">
         <div class="dropdown-content">
-          <a href="{{ url_for('main.render_downloads_by_category') }}">Total Downloads by Category</a><br/>
-          <a href="#">To be implemented</a>
-          <a href="#">To be implemented</a>
+          <a href="{{ url_for('graph_routes.render_downloads_by_category') }}">Total Downloads by Category</a><br/>
+          <a href="{{ url_for('graph_routes.render_downloads_by_archive') }}">Total Downloads by Archive</a><br/>
+          <a href="{{ url_for('graph_routes.render_archive_areagraph') }}">Archive Areagraph</a><br/>
+          <a href="{{ url_for('graph_routes.render_category_areagraph') }}">Category AreaGraph</a><br/>
         </div>
       </div>
     </div>
 
-    <div class="admin-tools">
-      <p>Test real database fetch API here:</p>
+    <div class="list">
+      <p>Test JSON return results here:</p>
       <a id="api-downloads-by-hour" href="#">Get downloads by Hour</a>
       <a id="api-downloads-by-country" href="#">Get downloads by Country</a>
       <a id="api-downloads-by-archive" href="#">Get downloads by Archive</a>
       <a id="api-downloads-by-category" href="#">Get downloads by Category</a>
-
-      <p>Am I logged in?:</p>
-      <a id="logged-in-status" href="#">Click me and find out</a>
+      <a id="api-triple-arg" href="#">Get downloads by each Category and their Archive, by year (This may take a while.)</a>
     </div>
   </div>
 
@@ -170,7 +67,7 @@
       document.getElementById("api-downloads-by-country").href = baseUrl + "/api/get_data?model=hourly&group_by=country";
       document.getElementById("api-downloads-by-archive").href = baseUrl + "/api/get_data?model=hourly&group_by=archive";
       document.getElementById("api-downloads-by-category").href = baseUrl + "/api/get_data?model=hourly&group_by=category";
-      document.getElementById("logged-in-status").href = baseUrl + "/api/auth/status";
+      document.getElementById("api-triple-arg").href = baseUrl + "/api/get_data?model=hourly&group_by=archive&second_group_by=category&time_group=year";
     });
   </script>
 </body>
