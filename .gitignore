@@ -165,3 +165,8 @@ cython_debug/
 #.idea/
 
 .DS_Store
+
+
+# NPM dependencies
+node_modules/
+package-lock.json

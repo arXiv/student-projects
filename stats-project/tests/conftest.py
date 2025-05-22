@@ -1,5 +1,5 @@
 import pytest
-from browse.factory import create_app
+from backend.factory import create_app
 
 @pytest.fixture
 def app():
