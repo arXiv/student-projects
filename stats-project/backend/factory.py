@@ -4,8 +4,8 @@
 import os
 from flask import Flask
 from flask_cors import CORS
-from config import config
-from api import api
+from .config import config
+from .api import api
 # removed frontend routes for this branch 
 # from routes.graph_routes import graph_routes 
 
