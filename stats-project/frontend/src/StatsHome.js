@@ -72,7 +72,10 @@ function StatsHome() {
                 
                 <div 
                     style={styles.categoryCard} 
-                    onClick={() => navigate('/stats/submissions')}
+                    // Uncomment the line below to enable navigation to the submissions stats page
+                    // For now, it redirects to an external old submissions page
+                    /* onClick={() => navigate('/stats/submissions')} */
+                    onClick={() => window.location.href = 'https://info.arxiv.org/about/reports/submission_category_by_year.html'}
                 >
                     <h2 style={styles.categoryTitle}>Submission Statistics</h2>
                     <p>View data about paper submissions including monthly totals and breakdowns by subject area.</p>

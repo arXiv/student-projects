@@ -136,3 +136,9 @@ def get_todays_downloads():
 
     except Exception:
         return jsonify({"error": "Internal server error"}), 500
+    
+# Health check endpoint to verify the API is running
+@api.route("/am_i_running", methods=["GET"])
+def health_check():
+    """Health check endpoint to verify the API is running."""
+    return jsonify({"status": "yep"}), 200

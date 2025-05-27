@@ -76,15 +76,10 @@ const chartOptions = {
     ],
     submissions: [
         {
-            id: 'monthly',
-            title: 'Monthly Submissions',
-            description: 'View submission totals by month over time. TBD!'
-        },
-        {
-            id: 'subject',
+            id: 'subject-by-submissions',
             title: 'Submissions by Subject',
-            description: 'Breakdown of submissions by subject area. TBD!'
-        },
+            description: 'View submission totals over time.'
+        }
     ]
 };
 

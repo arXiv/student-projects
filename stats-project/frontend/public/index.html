@@ -62,7 +62,9 @@
         
         // Update static asset URLs
         document.querySelectorAll('img[data-src]').forEach(img => {
-          img.src = dashboardUrl + img.getAttribute('data-src');
+          // img.src = dashboardUrl + img.getAttribute('data-src'); not sure why we're injecting dashboardUrl, commenting out for now
+
+          img.src = img.getAttribute('data-src'); 
         });
       }
 
