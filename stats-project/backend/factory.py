@@ -6,7 +6,8 @@ from flask import Flask
 from flask_cors import CORS
 from config import config
 from api import api
-# from routes.graph_routes import graph_routes # removed frontend routes for this branch 
+# removed frontend routes for this branch 
+# from routes.graph_routes import graph_routes 
 
 
 def create_app(app_config="development"):
@@ -16,7 +17,8 @@ def create_app(app_config="development"):
     CORS(app)
 
     # Register blueprints
-    #app.register_blueprint(graph_routes)  # removed frontend routes for this branch 
+    # removed frontend routes for this branch 
+    #app.register_blueprint(graph_routes)  
     app.register_blueprint(api, url_prefix="/api")  # Backend API
 
     return app
