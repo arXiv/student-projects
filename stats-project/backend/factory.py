@@ -1,4 +1,5 @@
 # backend/factory.py
+# Creates the Flask application instance.
 
 import os
 from flask import Flask
