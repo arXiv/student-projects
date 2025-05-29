@@ -41,10 +41,11 @@ Usage:
 import os
 from sqlalchemy import create_engine, func, extract, text
 from sqlalchemy.orm import sessionmaker, scoped_session
-from dotenv import load_dotenv # Uncomment this line if needed
-from models import get_model
-from add_old_data import inject_old_data
 from datetime import datetime, timedelta
+from dotenv import load_dotenv # Uncomment this line if needed
+from .models import get_model
+from .add_old_data import inject_old_data
+
 
 # Load environment variables
 load_dotenv()  # Uncomment this line if needed
