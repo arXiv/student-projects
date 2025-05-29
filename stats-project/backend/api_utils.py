@@ -3,6 +3,7 @@ api_utils.py
 
 This module provides utility functions for querying and aggregating data from the database using SQLAlchemy.
 It includes functions for time-based aggregation, querying models, and fetching specific data such as today's downloads.
+Developed with the intention that this code should eventually be portable from PostgreSQL to MySQL with minimal changes.
 
 Functions:
     get_time_group_column(model, time_group):
@@ -14,8 +15,8 @@ Functions:
     query_global_sum(model_name, time_group):
         Queries the total sum of data aggregated by time group.
 
-    query_todays_downloads():
-        Queries for today's download statistics aggregated by hour.
+    query_daily_downloads():
+        Queries for download statistics aggregated by hour for a given date and timezone.
 
 Modules:
     os: Provides a way of using operating system dependent functionality.
@@ -25,7 +26,7 @@ Modules:
     browse.add_old_data: Contains functions to inject old data into the results.
 
 Environment Variables:
-    PROD_DB_URL: The database URL for the production environment.
+    DATABASE_URI: The database URI.
 
 SQLAlchemy Setup:
     engine: The SQLAlchemy engine created using the database URL.
@@ -41,12 +42,13 @@ import os
 from sqlalchemy import create_engine, func, extract, text
 from sqlalchemy.orm import sessionmaker, scoped_session
 from dotenv import load_dotenv # Uncomment this line if needed
-from .models import get_model
-from .add_old_data import inject_old_data
+from models import get_model
+from add_old_data import inject_old_data
+from datetime import datetime, timedelta
 
 # Load environment variables
 load_dotenv()  # Uncomment this line if needed
-DATABASE_URL = os.getenv("DATABASE_URI")
+DATABASE_URL = os.getenv("DATABASE_URI") 
 
 # SQLAlchemy setup
 engine = create_engine(DATABASE_URL)
@@ -238,72 +240,84 @@ def query_global_sum(model_name, time_group):
         session.close()
 
 
-""" def query_todays_downloads():
-    Queries for today's download statistics aggregated by hour.
 
-    Returns:
-        formatted_result (list): A list of dicts, with keys 'hour' and 'total_primary' representing the aggregated data.
+from datetime import datetime, timedelta
 
-    Raises:
-        Exception: If there is an error in executing the query.
-    session = Session()
-    try:
-        # Open a raw connection and execute a canned query.
-        query = text(
-            SELECT 
-                EXTRACT(HOUR FROM start_dttm) AS hour,
-                SUM(primary_count) AS total_primary_count
-            FROM 
-                hourly_download_data
-            WHERE 
-                DATE(start_dttm) = CURRENT_DATE
-            GROUP BY 
-                EXTRACT(HOUR FROM start_dttm)
-            ORDER BY 
-                hour;
-        )
-        result = session.execute(query).fetchall()
 
-        # Format results into JSON
-        formatted_result = [{"hour": row[0], "total_primary": row[1]} for row in result]
-
-        return formatted_result
-
-    except Exception as e:
-        raise
-
-    finally:
-        session.close() """
-
-def query_todays_downloads(timezone='UTC'):
+def query_daily_downloads(target_date=None, timezone='UTC'):
     """
-    Queries for today's download statistics aggregated by hour in the specified timezone.
+    Queries download statistics aggregated by hour for a given date and timezone.
+    Defaults to today's date in the specified timezone if no date is provided.
 
     Args:
-        timezone (str): The IANA timezone string, e.g., 'America/New_York'. Defaults to UTC.
+        target_date (str): Date in 'YYYY-MM-DD' format. Defaults to today in the given timezone.
+        timezone (str): IANA timezone string (e.g., 'America/New_York'). Defaults to 'UTC'.
 
     Returns:
-        formatted_result (list): A list of dicts, with keys 'hour' and 'total_primary'.
+        formatted_result (list): A list of dicts with 'hour' and 'total_primary'.
     """
     session = Session()
     try:
-        query = text(f"""
-            SELECT 
-                EXTRACT(HOUR FROM start_dttm AT TIME ZONE 'UTC' AT TIME ZONE :tz) AS local_hour,
-                SUM(primary_count) AS total_primary_count
-            FROM 
-                hourly_download_data
-            WHERE 
-                start_dttm AT TIME ZONE 'UTC' AT TIME ZONE :tz >= date_trunc('day', now() AT TIME ZONE :tz)
-                AND start_dttm AT TIME ZONE 'UTC' AT TIME ZONE :tz < date_trunc('day', now() AT TIME ZONE :tz) + interval '1 day'
-            GROUP BY 
-                local_hour
-            ORDER BY 
-                local_hour;
-        """)
+        # Default to today's date in the given timezone
+        if target_date:
+            print(f"Querying downloads for date: {target_date} in timezone: {timezone}")
+            try:
+                dt = datetime.strptime(target_date, "%Y-%m-%d")
+            except ValueError:
+                raise ValueError("target_date must be in 'YYYY-MM-DD' format.")
+        else:
+            dt = datetime.now()  # naive UTC fallback
 
-        result = session.execute(query, {"tz": timezone}).fetchall()
-        formatted_result = [{"hour": int(row[0]), "total_primary": row[1]} for row in result]
+        db_engine = engine.dialect.name.lower()
+
+        if db_engine == "postgresql":
+            query = text(f"""
+                SELECT 
+                    EXTRACT(HOUR FROM start_dttm AT TIME ZONE 'UTC' AT TIME ZONE :tz) AS local_hour,
+                    SUM(primary_count) AS total_primary_count
+                FROM 
+                    hourly_download_data
+                WHERE 
+                    start_dttm AT TIME ZONE 'UTC' AT TIME ZONE :tz >= :start_date
+                    AND start_dttm AT TIME ZONE 'UTC' AT TIME ZONE :tz < :end_date
+                GROUP BY 
+                    local_hour
+                ORDER BY 
+                    local_hour;
+            """)
+            start_dt = dt.strftime("%Y-%m-%d")
+            end_dt = (dt + timedelta(days=1)).strftime("%Y-%m-%d")
+            result = session.execute(query, {
+                "tz": timezone,
+                "start_date": start_dt,
+                "end_date": end_dt
+            }).fetchall()
+
+        elif db_engine == "mysql":
+            query = text(f"""
+                SELECT 
+                    HOUR(CONVERT_TZ(start_dttm, '+00:00', :tz)) AS local_hour,
+                    SUM(primary_count) AS total_primary_count
+                FROM 
+                    hourly_download_data
+                WHERE 
+                    DATE(CONVERT_TZ(start_dttm, '+00:00', :tz)) = :target_date
+                GROUP BY 
+                    local_hour
+                ORDER BY 
+                    local_hour;
+            """)
+            result = session.execute(query, {
+                "tz": timezone,
+                "target_date": dt.strftime("%Y-%m-%d")
+            }).fetchall()
+
+        else:
+            raise NotImplementedError(f"Unsupported DB engine: {db_engine}")
+
+        formatted_result = [
+            {"hour": int(row[0]) + 1, "total_primary": row[1]} for row in result
+        ]
         return formatted_result
 
     except Exception as e:

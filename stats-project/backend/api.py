@@ -14,8 +14,8 @@ Functions:
     get_global_sum():
         API endpoint to fetch the global sum of data aggregated by time unit.
 
-    get_todays_downloads():
-        API endpoint to fetch today's download statistics aggregated by hour.
+    get_daily_downloads():
+        API endpoint to fetch daily download statistics aggregated by hour.
 
 Modules:
     flask: Provides the Flask web framework.
@@ -29,8 +29,9 @@ Usage:
 
 from flask import Blueprint, jsonify, request
 from flask_cors import CORS
-from .api_utils import query_model, query_global_sum, query_todays_downloads
-from .models import get_model
+from api_utils import query_model, query_global_sum, query_daily_downloads
+from models import get_model
+from datetime import datetime
 
 # Setup Flask Blueprint and CORS
 api = Blueprint("api", __name__)
@@ -106,14 +107,14 @@ def get_global_sum():
         return jsonify({"error": "Internal server error"}), 500
 
 
-@api.route("/get_todays_downloads", methods=["GET"])
-def get_todays_downloads():
-    """API endpoint to fetch today's download statistics aggregated by hour, optionally in a specified timezone. Defaults to UTC."""
+
+@api.route("/get_daily_downloads", methods=["GET"])
+def get_daily_downloads():
+    """API endpoint to fetch download statistics aggregated by hour."""
     try:
         timezone = request.args.get("timezone", "UTC")
+        date = request.args.get("date")
 
-        # Only allow known safe timezones to prevent SQL injection or invalid queries
-        # TODO: Use more universal timezones / add more. 
         allowed_timezones = {
             "UTC",
             "America/New_York",
@@ -131,14 +132,17 @@ def get_todays_downloads():
         if timezone not in allowed_timezones:
             return jsonify({"error": f"Invalid timezone '{timezone}'"}), 400
 
-        data = query_todays_downloads(timezone)
+        if date:
+            try:
+                datetime.strptime(date, '%Y-%m-%d')
+            except ValueError:
+                return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+        data = query_daily_downloads(timezone=timezone, target_date=date)
         return jsonify(data)
 
-    except Exception:
-        return jsonify({"error": "Internal server error"}), 500
-    
-# Health check endpoint to verify the API is running
-@api.route("/am_i_running", methods=["GET"])
-def health_check():
-    """Health check endpoint to verify the API is running."""
-    return jsonify({"status": "yep"}), 200
+    except Exception as e:
+        return jsonify({
+            "error": "Internal server error",
+            "details": str(e)
+        }), 500
