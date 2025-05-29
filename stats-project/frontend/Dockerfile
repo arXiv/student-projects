@@ -1,32 +1,19 @@
-FROM node:14
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy all files
-COPY . .
-
-# Set build arguments
-ARG REACT_APP_API_URL
-ARG REACT_APP_ENV
-
-# Set environment variables
-ENV REACT_APP_API_URL=$REACT_APP_API_URL
-ENV REACT_APP_ENV=$REACT_APP_ENV
-
 # Install dependencies
+COPY package*.json ./
 RUN npm install
 
-# Build the app
-RUN npm run build
+# Copy the rest of app
+COPY . .
 
-# Use environment substitution in the built index.html
-RUN sed -i 's|%REACT_APP_ENV%|'${REACT_APP_ENV}'|g' build/index.html
+# Expose the default React dev server port
+EXPOSE 3000
 
-# Install serve
-RUN npm install -g serve
+# Set host to 0.0.0.0 
+ENV HOST=0.0.0.0
 
-# Expose port 9000
-EXPOSE 9000
-
-# Start the application
-CMD ["serve", "-s", "build", "-l", "9000"]
+# Start the development server
+CMD ["npm", "start"]
