@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Plotly from 'plotly.js-dist';
+import { API_BASE_URL } from '../../config';
 
 const HourlyUsage = () => {
   const chartRef = useRef(null);
@@ -47,7 +48,7 @@ const HourlyUsage = () => {
     setNoData(false);
     setChartData(null); // Clear previous data
 
-    fetch(`http://127.0.0.1:8080/api/get_daily_downloads?timezone=${encodeURIComponent(tz)}&date=${formatDate(date)}`)
+    fetch(`${API_BASE_URL}/get_daily_downloads?timezone=${encodeURIComponent(tz)}&date=${formatDate(date)}`)
       .then(response => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();

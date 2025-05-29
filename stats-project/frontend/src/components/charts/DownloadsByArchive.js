@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Plotly from 'plotly.js-dist';
+import { API_BASE_URL } from '../../config';
 
 const DownloadsByArchive = () => {
   const chartRef = useRef(null);
@@ -7,7 +8,7 @@ const DownloadsByArchive = () => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8080/api/get_data?model=hourly&group_by=archive') // Change me for production!
+    fetch(`${API_BASE_URL}/get_data?model=hourly&group_by=archive`)
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok ' + response.statusText);

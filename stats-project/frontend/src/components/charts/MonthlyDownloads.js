@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import Plotly from 'plotly.js-dist';
+import { API_BASE_URL } from '../../config';
 
 const MonthlyDownloads = () => {
   const chartRef = useRef(null);
@@ -7,7 +8,7 @@ const MonthlyDownloads = () => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8080/api/get_global_sum?model=hourly&time_group=month`)
+    fetch(`${API_BASE_URL}/get_global_sum?model=hourly&time_group=month`)
       .then(response => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
