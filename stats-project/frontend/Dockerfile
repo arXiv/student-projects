@@ -3,6 +3,11 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
+# Accept build arguments
+# Specifically, just to catch the API URL env variable. 
+ARG REACT_APP_API_BASE_URL
+ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
+
 # Install dependencies
 COPY package*.json ./
 RUN npm ci
