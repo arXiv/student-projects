@@ -1,19 +1,31 @@
-FROM node:18-alpine
+# Use Node.js to build the app
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
-# Copy the rest of app
+# Copy the rest of your app
 COPY . .
 
-# Expose the default React dev server port
-EXPOSE 3000
+# Build the React app (will use .env if present in /app or /app/src)
+RUN npm run build
 
-# Set host to 0.0.0.0 
-ENV HOST=0.0.0.0
+# Use a lightweight image to serve the build
+FROM node:18-alpine
 
-# Start the development server
-CMD ["npm", "start"]
+WORKDIR /app
+
+# Install serve globally
+RUN npm install -g serve
+
+# Copy the build output from the previous stage
+COPY --from=build /app/build ./build
+
+# Expose the port you want to use (e.g., 9000)
+EXPOSE 9000
+
+# Serve the app on port 9000
+CMD ["serve", "-s", "build", "-l", "9000"]
