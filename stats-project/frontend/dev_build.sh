@@ -1,3 +1,4 @@
+# Holdover script from activity dashboard that does not work with this project.
 #!/bin/bash
 
 # Set environment variables

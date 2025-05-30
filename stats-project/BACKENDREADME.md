@@ -1,89 +1,110 @@
-# Student statistics dashboard project backend
+# Student Statistics Dashboard Project Backend
 
 ## Overview
 
-This folder intends to hold the core functionalities behind the statistics page on Arxiv, as an independent package as opposed to its eventual implementation to Arxiv Browse and as a standalone Cloud Run.
-
-This document is to be updated as it nears production-ready status.
-
-  
+Flask-based backend API for serving arXiv usage statistics to the frontend dashboard. Provides endpoints for querying, aggregating, and delivering download and submission data. Designed to work with the React frontend in this repository, and designed to be portable (or at least usable) with both MySQL and Postgres.
 
 ## Prerequisites
 
-This project is reliant on the following libraries to function:
-
-- Flask 3.0.3
-- Flask-Cors 4.0.1
-- python-dotenv 0.21.0
-- SQLAlchemy 1.4.53
-- pymysql 1.1.0
-- mysqlclient 2.2.4
+- Python 3.10+
+- pip (Python package manager)
+- MySQL/PostGres database following standards in our aggregate hourly downloads table, such as the one specified within models.py.
 
 ## Relevant Files
 
-- api.py: A Flask Blueprint providing RESTful API endpoints for querying our data.
-- api_util.py: Provides the utility functions for connecting, querying, and aggregating data from our databases using SQLAlchemy, and packaging this data into JSON format. 
-- - add_old_data.py: When applicable, injects our old, less detailed data into sheets where it can fit in (primarily yearly and monthly download numbers.).
+### Core Files
 
-## Configure the Database URI as an environment variable
+- `factory.py`: Application factory and entry point for running the Flask app.
+- `api.py`: Defines API routes and endpoints for data queries.
+- `api_utils.py`:
+- `config.py`: Configuration settings for different environments.
+- `models.py`: SQLAlchemy models for database tables.
+- `add_old_data.py`:  Temporary function to inject our old, less detailed monthly/yearly data so long as our new database doesn't contain it.
+- `requirements.txt`: Python dependencies.
 
-To ensure the app and API are able to connect to the database correctly, create a `.env` file within the `frontend` folder, with a variable named `DATABASE_URI`, a mySQL or PostGres URI to your database. If you are connecting to a cloudSQL database, be sure to run the proxy. If you intend to run this project within a docker container, ensure the URI uses a TCP connection, and if the URI needs to connect to a service on the host machine, replace part of the IP address (but not the port!) to host.docker.internal.
 
-  
+### Structure
 
-## Run the Flask Application with Python
+- This app is mostly on one level, communicating in a straight line back and forth from `factory.py` to `api.py` to `api_utils.py`, with the latter contacting `models.py` and `add_old_data.py` as necessary. 
 
-In a command line terminal, navigate to 'stats-project/frontend', and run the command
+## Running the Application
 
-`python factory.py.`
+### Locally
 
-This should start the app which should be accessible on http://127.0.0.1:8080/ in your browser.
+1. Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-  
+2. Set environment variables by placing a .env file within the folder and specifying your database URI.
+    ```
+    DATABASE_URI=postgresql+pg8000://your_username_here:your_password_here
+    ```
+3. Hop into `api.py`, `api_utils.py`, and `factory.py` and delete the `.` before the local imports. (You'll want them for the containerized version, though.)
 
-## Run with Docker
+4. Navigate to the backend folder and have python run factory.py.
+    ```bash
+    python factory.py
+    ```
 
-There is a dockerfile provided in the root of the project. To build an image from it, navigate to the frontend folder within a command line terminal and build it using commands
+5. Access the API at `http://localhost:8080/api/`
 
-```docker build -t arxiv-stats-api-image .``` and
+### Containerizing
 
-```docker run -p 8080:8080 arxiv-stats-api-image```
+1. **Build the Docker image:**
+    ```bash
+    docker build -t stats-dashboard-backend .
+    ```
 
-This should start the app which should be accessible on http://127.0.0.1:8080/ in your browser.
+2. **Run the container, mapping port 8080:** (You'll need to specify the environment variable for your URI here.)
+    ```bash
+    docker run -p 8080:8080 -e DATABASE_URI=$DATABASE_URI stats-dashboard-backend
+    ```
 
-  
-  
+3. **Access the API** at [http://localhost:8080/api/](http://localhost:8080/api/)
 
-## Frontend
-
-To be replaced with a react frontend within its own folder, for now there is a development "frontend" that serves some demo graphs within `browse/templates`:
-
-- archive_areagraph.html
-- category_areagraph.html
-- downloads_by_archive.html
-- downloads_by_category.html
-- hourly_usage_rates.html
-- monthly_downloads.html
-
-  
+### Steps to note for containerizing for Google Cloud:
+1. Map the container port to whatever ends up in the dockerfile (as of now, 8080)
+2. Set the environment variable for the URI as DATABASE_URI, and give it its appropriate value.
+3. Remember to give it a cloud sql connection so it can connect directly to our database. 
+4. Google gets finicky having the Dockerfile not be in the root of this repo. You'll want to go to your cloud build yaml and replace the appropriate step with this: (Thanks to Chris for helping debug this!)
+```steps:
+  - name: gcr.io/cloud-builders/docker
+    id: Build
+    dir: /workspace/stats-project/backend
+    args:
+      - build
+      - '--no-cache'
+      - '-t'
+      - $_AR_HOSTNAME/$PROJECT_ID/cloud-run-source-deploy/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA
+      - '-f'
+      - dockerfile
+      - .
+```
 
 # API Endpoints/Parameters
 
-The API itself is intended to aggregate Primary downloads of papers at Arxiv.
+### `GET /get_data`
+
+Fetch aggregated data with flexible grouping.
 
   
 
-
-### `GET /get_data`
-Fetch aggregated data with flexible grouping.
-
 **Required Parameters:**
-- `model` (string): Target database model (e.g. `"hourly_download_data"`)
-- `group_by` (string): Primary grouping column (must exist in model)
+
+-  `model` (string): Target database model (e.g. `"hourly_download_data"`)
+
+-  `group_by` (string): Primary grouping column (must exist in model)
+
+  
 
 **Optional Parameters:**
-- `second_group_by` (string): Secondary grouping column
-- `time_group` (string): Time aggregation (`"year"`, `"month"`, or `"day"`)
+
+-  `second_group_by` (string): Secondary grouping column
+
+-  `time_group` (string): Time aggregation (`"year"`, `"month"`, or `"day"`)
+
+  
 
   
 
@@ -91,80 +112,104 @@ Fetch aggregated data with flexible grouping.
 
   
 
+  
+
 200 OK: A JSON array of objects, using lists in its keys if neccessary. If it does use a list, the same indexes in each list correspond to one data point. For example, http://localhost:8080/api/get_data?model=hourly&group_by=category&second_group_by=country will fetch results similar to
 
   
 
-```javascript
+  
 
-[
+``` [ { "category": "astro-ph", "country": [ "Albania", "Algeria", "Argentina", ... ], "data": [ "1", "5", "14", ... ] } ... ] ```
 
-{
-
-"category":  "astro-ph",
-
-"country": [
-
-"Albania",
-
-"Algeria",
-
-"Argentina",...
-
-],
-
-"data": [
-
-"1",
-
-"5",
-
-"14",...
-
-]
-
-}...
-
-]
-
-```
+  
 
 Where data is always the primary counts aggregated by given parameters. Other keys should match other parameters specified.
+
+  
+  
 
 
 ### `GET /get_global_sum`
 
-Get total sums aggregated by time period.
+Returns aggregated total download sums grouped by a specified time unit.
 
-**Required Parameters:**
+#### **Query Parameters (Required):**
 
--   `model`  (string): Target database model (e.g. `"hourly_download_data"`)
+-   `model` (string): Name of the data model to query.  
+    Example: `"hourly_download_data"`
     
--   `time_group`  (string): Aggregation period (`"year"`,  `"month"`,  `"day"`, or  `"hour"`)
+-   `time_group` (string): The time unit to group by.  
+    Must be one of: `"year"`, `"month"`, `"day"`, or `"hour"`
+    
+
+#### **Response:**
+
+A JSON array of grouped total sums:
+
+`[  {  "total_sum":  12345,  "time_group":  "2023"  },  {  "total_sum":  6789,  "time_group":  "2024"  }  ]` 
+
+The format of `time_group` depends on the aggregation:
+
+-   `"year"` → `"YYYY"`
+    
+-   `"month"` → `"YYYY-MM-01"` (first day of the month for compatibility)
+    
+-   `"day"` → `"YYYY-MM-DD"`
+    
+
+#### **Notes:**
+
+-   Older data may be injected into results if the time group is `"month"` or `"year"` to provide historical continuity (temporary until older data is fully migrated).
+
+
+### `GET /get_daily_downloads`
+
+Returns hourly download statistics for a given date, adjusted to a specified timezone.
+
+#### **Query Parameters (Optional):**
+
+-   `timezone` (string): IANA timezone string to align hourly breakdown (default: `"UTC"`).
+    
+-   `date` (string): Specific date in `YYYY-MM-DD` format (default: today's date in the specified timezone).
+    
+
+#### **Response:**
+
+A JSON array of hourly download counts:
+
+`[  {  "hour":  1,  "total_primary":  42  },  {  "hour":  2,  "total_primary":  57  }, ... ]` 
+
+Each `hour` is in the range 1–24 (representing the end of the hour in the local timezone), and `total_primary` is the aggregated count for that hour.
+
+#### **Currently Supported Timezones:**
+
+-   **UTC**
+    
+-   **Americas**:  
+    `America/New_York`, `America/Chicago`, `America/Denver`, `America/Los_Angeles`
+    
+-   **Europe**:  
+    `Europe/London`, `Europe/Berlin`
+    
+-   **Asia/Pacific**:  
+    `Asia/Tokyo`, `Asia/Shanghai`, `Asia/Kolkata`, `Australia/Sydney`
+
   
-  ### `GET /get_todays_downloads`
+  
+  
 
-Get today's downloads by hour (timezone-aware).
+**Overall error codes:**
 
-**Optional Parameter:**
-
--   `timezone`  (string): Timezone for hour alignment (default:  `"UTC"`)
-    
-
-**Currently Supported Timezones:**
-
--   Americas:  `America/New_York`,  `America/Chicago`,  `America/Denver`,  `America/Los_Angeles`
-    
--   Europe:  `Europe/London`,  `Europe/Berlin`
-    
--   Asia/Pacific:  `Asia/Tokyo`,  `Asia/Shanghai`,  `Asia/Kolkata`,  `Australia/Sydney`
-
-
-
-**Overall Returns:**
 - 400 Bad Request: If required parameters are missing or invalid.
+
 - 500 Internal Server Error: For any server-side errors.
 
-## Testing
+## Known Issues / WIPs
 
-- TBD
+1. Submission statistics endpoints are currently incomplete.
+2. More detailed error handling and validation improvements in progress.
+3. Production deployment configuration is a work in progress.
+4. Test Suite and local testing environment in progress. As a consequence, thorough testing and edge cases relatively unexplored.
+5. Since our new stats database does not currently have our legacy data we have a temporary add_old_data.py script to inject them in.
+6. Query result caching unimplemented -- could really speed up the latter two endpoints!
