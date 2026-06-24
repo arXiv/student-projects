@@ -8,6 +8,16 @@ Other directories contain python source code for production cloud functions whic
 
 All functions are idempotent.
 
+## To develop on a function
+
+- Change into the relevant directory (e.g. `stats-functions/monthly_downloads`)
+- Create a venv with the current python version (see the terraform) with `uv venv -p {version} --seed`
+- Activate the venv `source .venv/bin/activate`
+- Install requirements `pip install -r src/requirements.txt` and `pip install -r src/requirements-dev.txt`
+- Run tests with `uv run pytest tests`
+
+If updating dependencies, update `requirements.in`, then recreate `requirements.txt` (the 'lock file') with `uv pip compile requirements.in -o requirements.txt -p {version}` (this command is also at the top of `requirements.txt`)
+
 ## To deploy a function
 
 To deploy any of the above cloud functions to a remote environment, use the existing workflow at `.github/workflows/deploy-function.yml`. Triggers for automated deployment can also be found in `.github/workflows/`.
