@@ -16,8 +16,8 @@ from models import FastlyStatsApiResponse
 from pydantic import ValidationError
 
 from stats_entities.site_usage import HourlyRequests
-from stats_functions.exception import NoRetryError
-from stats_functions.utils import (
+from arxiv_functions.exception import NoRetryError
+from arxiv_functions.utils import (
     set_up_cloud_logging,
     get_engine_unix_socket,
     event_time_exceeds_retry_window,
