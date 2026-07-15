@@ -60,6 +60,11 @@ resource "google_cloudfunctions2_function" "function" {
   location    = var.gcp_region              # needs to be explicitly declared for Cloud Run
   description = "Cloud function to sum submissions and persist to a database"
 
+  labels = {
+    arxiv-system    = "reporting"
+    arxiv-subsystem = "rep-stats"
+  }
+
   build_config {
     runtime     = "python313"
     entry_point = "get_monthly_submissions"
