@@ -157,14 +157,14 @@ resource "google_cloud_scheduler_job" "invoke_cloud_function" {
 ### alerting ###
 
 resource "google_monitoring_alert_policy" "cloud_run_error_alert" {
-  display_name = "${google_cloudfunctions2_function.function.name} logging errors"
+  display_name = "${google_cloudfunctions2_function.function.name} NoRetryError"
   combiner     = "OR"
   severity     = "ERROR"
 
   conditions {
-    display_name = "Cloud Run error log"
+    display_name = "Cloud Run NoRetryError log"
     condition_matched_log {
-      filter = "resource.type=\"cloud_run_revision\" AND severity=(\"ERROR\" OR \"CRITICAL\" OR \"ALERT\" OR \"EMERGENCY\") AND resource.labels.service_name=\"${google_cloudfunctions2_function.function.name}\""
+      filter = "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${google_cloudfunctions2_function.function.name}\" AND jsonPayload.message=~\"A NoRetry exception has been raised\""
     }
   }
 
@@ -179,7 +179,7 @@ resource "google_monitoring_alert_policy" "cloud_run_error_alert" {
   ]
 
   documentation {
-    content   = "Cloud Run service ${google_cloudfunctions2_function.function.name} has reported an error - see logs."
+    content   = "Cloud Run service ${google_cloudfunctions2_function.function.name} raised a NoRetryError and will not retry - see logs, fix the problem, and manually run the function to patch data as needed."
     mime_type = "text/markdown"
   }
 }

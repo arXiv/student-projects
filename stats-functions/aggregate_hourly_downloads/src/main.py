@@ -246,8 +246,9 @@ def perform_aggregation(
     paper_categories = process_paper_categories(query_results)
 
     if fetched_count > 0 and not paper_categories:
-        logger.error(f"{time_period_str}: No category data retrieved from database!")
-        raise NoRetryError
+        raise NoRetryError(
+            f"{time_period_str}: No category data retrieved from database!"
+        )
 
     # aggregate download data
     aggregated_data = aggregate_data(download_data, paper_categories)
@@ -295,8 +296,7 @@ def query_logs(start_time: str, end_time: str) -> RowIterator:
     if rows.total_rows > 0:
         return rows
     else:
-        logger.error("No log data returned from bigquery!")
-        raise NoRetryError
+        raise NoRetryError("No log data returned from bigquery!")
 
 
 def get_start_and_end_times(hour: datetime) -> tuple[datetime, datetime]:
@@ -310,8 +310,7 @@ def validate_cloud_event(cloud_event: CloudEvent) -> datetime:
     event_time = parse_cloud_event_time(cloud_event)
 
     if event_time_exceeds_retry_window(config, event_time):
-        logger.exception("Event time exceeds retry window!")
-        raise NoRetryError
+        raise NoRetryError("Event time exceeds retry window!")
 
     return (event_time - timedelta(hours=config.hour_delay)).replace(minute=0, second=0)
 
@@ -373,6 +372,11 @@ def aggregate_hourly_downloads(cloud_event: CloudEvent):
 
     except Exception as e:
         # pubsub will retry with a warm start
+        logger.warning(
+            f"Retryable error occurred, pubsub will retry with a warm start: {e}",
+            exc_info=True,
+        )
+
         # clean engine pools to prevent a memory leak inside the warm container
         logger.info("Disposing engine pools to release memory")
 
