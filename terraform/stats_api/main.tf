@@ -65,6 +65,11 @@ resource "google_cloud_run_v2_service" "stats_api" {
   name     = "stats-api"
   location = var.gcp_region
 
+  labels = {
+    arxiv-system    = "reporting"
+    arxiv-subsystem = "rep-stats"
+  }
+
   template {
     service_account = google_service_account.account.email
     containers {
