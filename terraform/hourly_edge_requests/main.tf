@@ -60,6 +60,11 @@ resource "google_cloudfunctions2_function" "function" {
   location    = var.gcp_region               # needs to be explicitly declared for Cloud Run
   description = "Cloud function to get hourly edge requests from Fastly API and persist to a database"
 
+  labels = {
+    arxiv-system    = "reporting"
+    arxiv-subsystem = "rep-stats"
+  }
+
   build_config {
     runtime     = "python313"
     entry_point = "get_hourly_edge_requests"
