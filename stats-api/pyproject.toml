@@ -10,7 +10,7 @@ dependencies = [
     "gunicorn>=25.3.0",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.14.2",
-    "pymysql[rsa]>=1.1.2",
+    "pymysql[rsa]>=1.2.0",
     "pytest>=8.4.2",
     "python-dateutil>=2.9.0.post0",
     "stats-entities",
