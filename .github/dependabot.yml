@@ -46,20 +46,6 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
-  - package-ecosystem: "pip"
-    directory: "/stats-functions"
-    schedule:
-      interval: "weekly"
-    groups:
-      patch-updates:
-        patterns:
-          - "*"
-        update-types:
-          - "patch"
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
-
   - package-ecosystem: "github-actions"
     # check for updates to github actions monthly
     directory: "/"
