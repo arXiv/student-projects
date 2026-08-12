@@ -169,7 +169,7 @@ resource "google_monitoring_alert_policy" "cloud_run_error_alert" {
   conditions {
     display_name = "Cloud Run NoRetryError log"
     condition_matched_log {
-      filter = "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${google_cloudfunctions2_function.function.name}\" AND jsonPayload.message=~\"A NoRetry exception has been raised\""
+      filter = "resource.type=\"cloud_run_revision\" AND resource.labels.service_name=\"${google_cloudfunctions2_function.function.name}\" AND textPayload=~\"A NoRetry exception has been raised\""
     }
   }
 
