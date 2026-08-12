@@ -29,6 +29,7 @@ jobs:
 
   call-deploy:
     needs: call-lint-test
+    # if: github.ref == 'refs/heads/main'
     name: Deploy hourly downloads
     uses: ./.github/workflows/deploy-function.yml
     with:
