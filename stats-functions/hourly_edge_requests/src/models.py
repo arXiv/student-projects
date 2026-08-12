@@ -1,5 +1,5 @@
+
 from pydantic import BaseModel, ConfigDict
-from typing import Dict
 
 
 class Pop(BaseModel):
@@ -9,4 +9,4 @@ class Pop(BaseModel):
 
 
 class FastlyStatsApiResponse(BaseModel):
-    stats: Dict[str, Pop]
+    stats: dict[str, Pop]

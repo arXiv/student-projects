@@ -1,27 +1,23 @@
-import os
 import logging
+import os
 from datetime import date, datetime
-from dateutil.relativedelta import relativedelta
 
 import functions_framework
+from arxiv_functions.exception import NoRetryError
+from arxiv_functions.utils import (
+    event_time_exceeds_retry_window,
+    get_engine_unix_socket,
+    parse_cloud_event_time,
+    set_up_cloud_logging,
+)
 from cloudevents.http import CloudEvent
-
+from config import get_config
+from dateutil.relativedelta import relativedelta
+from entities import Document
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
-
-from config import get_config
-
 from stats_entities.site_usage import MonthlySubmissions
-from entities import Document
-
-from arxiv_functions.exception import NoRetryError
-from arxiv_functions.utils import (
-    set_up_cloud_logging,
-    get_engine_unix_socket,
-    event_time_exceeds_retry_window,
-    parse_cloud_event_time,
-)
 
 config = get_config(os.getenv("ENV"))
 
@@ -78,7 +74,8 @@ def validate_cloud_event(cloud_event: CloudEvent) -> date:
 def validate_month(cloud_event: CloudEvent) -> date:
     month = cloud_event.data["message"]["attributes"]["month"]
 
-    return datetime.strptime(month, "%Y-%m-%d").replace(day=1).date()
+    # naive UTC; immediately truncated to a date, matching the Date column in the DB
+    return datetime.strptime(month, "%Y-%m-%d").replace(day=1).date()  # noqa: DTZ007
 
 
 def validate_inputs(cloud_event: CloudEvent) -> date:
