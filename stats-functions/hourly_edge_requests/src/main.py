@@ -12,13 +12,14 @@ from arxiv_functions.utils import (
     set_up_cloud_logging,
 )
 from cloudevents.http import CloudEvent
-from config import get_config
 from fastly.api import stats_api
 from fastly.exceptions import ApiException
-from models import FastlyStatsApiResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import sessionmaker
 from stats_entities.site_usage import HourlyRequests
+
+from config import get_config
+from models import FastlyStatsApiResponse
 
 config = get_config(os.getenv("ENV"))
 

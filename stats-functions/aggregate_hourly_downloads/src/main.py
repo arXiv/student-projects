@@ -13,10 +13,14 @@ from arxiv_functions.utils import (
     set_up_cloud_logging,
 )
 from cloudevents.http import CloudEvent
-from config import get_config
-from entities import DocumentCategory, Metadata
 from google.cloud import bigquery
 from google.cloud.bigquery.table import RowIterator, _EmptyRowIterator
+from sqlalchemy import Row
+from sqlalchemy.orm import aliased, sessionmaker
+from stats_entities.site_usage import HourlyDownloads
+
+from config import get_config
+from entities import DocumentCategory, Metadata
 from models import (
     AggregationResult,
     DownloadCounts,
@@ -24,9 +28,6 @@ from models import (
     DownloadKey,
     PaperCategories,
 )
-from sqlalchemy import Row
-from sqlalchemy.orm import aliased, sessionmaker
-from stats_entities.site_usage import HourlyDownloads
 
 config = get_config(os.getenv("ENV"))
 

@@ -11,13 +11,14 @@ from arxiv_functions.utils import (
     set_up_cloud_logging,
 )
 from cloudevents.http import CloudEvent
-from config import get_config
 from dateutil.relativedelta import relativedelta
-from entities import Document
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from stats_entities.site_usage import MonthlySubmissions
+
+from config import get_config
+from entities import Document
 
 config = get_config(os.getenv("ENV"))
 
