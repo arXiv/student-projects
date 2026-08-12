@@ -6,7 +6,7 @@ anyio==4.13.0
     # via starlette
 arxiv-base @ git+https://github.com/arXiv/arxiv-base.git@a1fed38fcae2d8630acc9aa8b53c2f4a1776f5c5#egg=arxiv_base
     # via -r requirements.in
-arxiv-functions @ git+https://github.com/arXiv/arxiv-base.git@c63ad1cc3884445b755bae321028368c3c8272af#subdirectory=arxiv-functions
+arxiv-functions @ git+https://github.com/arXiv/arxiv-base.git@0987739e90c582aa69578c7ffc60e9b15b02410d#subdirectory=arxiv-functions
     # via -r requirements.in
 bleach==6.3.0
     # via arxiv-base
@@ -33,6 +33,8 @@ cloudevents==1.12.0
     # via
     #   arxiv-functions
     #   functions-framework
+coverage==7.15.4
+    # via pytest-cov
 cryptography==46.0.7
     # via
     #   google-auth
@@ -140,6 +142,8 @@ idna==3.11
     #   requests
 importlib-metadata==8.7.1
     # via opentelemetry-api
+iniconfig==2.3.0
+    # via pytest
 itsdangerous==2.2.0
     # via flask
 jinja2==3.1.6
@@ -173,6 +177,11 @@ packaging==26.1
     #   deprecation
     #   google-cloud-bigquery
     #   gunicorn
+    #   pytest
+pluggy==1.6.0
+    # via
+    #   pytest
+    #   pytest-cov
 proto-plus==1.27.2
     # via
     #   google-api-core
@@ -212,9 +221,17 @@ pydantic-settings==2.13.1
     # via
     #   arxiv-base
     #   arxiv-functions
+pygments==2.20.0
+    # via pytest
 pyjwt==2.12.1
     # via arxiv-base
 pymysql==1.1.2
+    # via -r requirements.in
+pytest==9.1.1
+    # via
+    #   -r requirements.in
+    #   pytest-cov
+pytest-cov==7.1.0
     # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via
@@ -243,6 +260,8 @@ ruamel-yaml==0.18.17
     # via arxiv-base
 ruamel-yaml-clib==0.2.15
     # via ruamel-yaml
+ruff==0.16.2
+    # via -r requirements.in
 s3transfer==0.16.0
     # via boto3
 setuptools==78.1.1
@@ -260,7 +279,7 @@ sqlalchemy==2.0.49
     #   stats-entities
 starlette==0.52.1
     # via functions-framework
-stats-entities @ git+https://github.com/arXiv/stats.git@3635615cf4ded2540fc684364f17ec68a6c4acde#subdirectory=stats-entities
+stats-entities @ git+https://github.com/arXiv/stats.git@4e93c3c6a952acbb392e06e5c6b3d0727b95bb1b#subdirectory=stats-entities
     # via -r requirements.in
 termcolor==3.3.0
     # via fire

@@ -28,7 +28,7 @@ from main import (
     validate_inputs,
 )
 
-from stats_functions.exception import NoRetryError
+from arxiv_functions.exception import NoRetryError
 from stats_entities.site_usage import SiteUsageBase, HourlyRequests
 
 
