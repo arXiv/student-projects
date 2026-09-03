@@ -1,29 +1,25 @@
-import os
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 
-import functions_framework
-from cloudevents.http import CloudEvent
-
 import fastly
+import functions_framework
+from arxiv_functions.exception import NoRetryError
+from arxiv_functions.utils import (
+    event_time_exceeds_retry_window,
+    get_engine_unix_socket,
+    parse_cloud_event_time,
+    set_up_cloud_logging,
+)
+from cloudevents.http import CloudEvent
 from fastly.api import stats_api
 from fastly.exceptions import ApiException
-
+from pydantic import ValidationError
 from sqlalchemy.orm import sessionmaker
+from stats_entities.site_usage import HourlyRequests
 
 from config import get_config
 from models import FastlyStatsApiResponse
-from pydantic import ValidationError
-
-from stats_entities.site_usage import HourlyRequests
-from stats_functions.exception import NoRetryError
-from stats_functions.utils import (
-    set_up_cloud_logging,
-    get_engine_unix_socket,
-    event_time_exceeds_retry_window,
-    parse_cloud_event_time,
-)
-
 
 config = get_config(os.getenv("ENV"))
 
@@ -70,7 +66,7 @@ def get_fastly_stats(start_time: int, end_time: int) -> FastlyStatsApiResponse:
 
 
 def sum_requests(response: FastlyStatsApiResponse) -> int:
-    return sum(response.stats[pop].edge_requests for pop in response.stats.keys())
+    return sum(response.stats[pop].edge_requests for pop in response.stats)
 
 
 def write_to_db(hour: datetime, count: int):
@@ -128,11 +124,10 @@ def validate_inputs(cloud_event: CloudEvent) -> datetime:
 def get_hourly_edge_requests(cloud_event: CloudEvent):
     global engine, SessionFactory
 
-    if config.env != "TEST":
-        if SessionFactory is None:
-            logger.info("Initializing engine and sessionmaker")
-            engine = get_engine_unix_socket(config.db)
-            SessionFactory = sessionmaker(bind=engine)
+    if config.env != "TEST" and SessionFactory is None:
+        logger.info("Initializing engine and sessionmaker")
+        engine = get_engine_unix_socket(config.db)
+        SessionFactory = sessionmaker(bind=engine)
 
     try:
         hour = validate_inputs(cloud_event)

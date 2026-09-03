@@ -38,11 +38,11 @@ jobs:
 
           python -m pip install --upgrade pip
           pip install -r "$SOURCE_DIR/requirements.txt"
-          pip install -r "$SOURCE_DIR/requirements-dev.txt"
 
-      # - name: Lint
-      #   run: |
-      #     ruff check --output-format=github stats-functions/${{ inputs.function_name }}/src
+      - name: Lint
+        working-directory: stats-functions/${{ inputs.function_name }}
+        run: |
+          ruff check --output-format=github src
 
       - name: Test with pytest
         working-directory: stats-functions/${{ inputs.function_name }}

@@ -4,6 +4,9 @@
 # pytest cache
 **/.pytest_cache/
 
+# coverage data
+**/.coverage
+
 # ruff cache
 **/.ruff_cache/
 

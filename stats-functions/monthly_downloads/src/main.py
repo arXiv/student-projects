@@ -1,26 +1,23 @@
-import os
 import logging
+import os
 from datetime import date, datetime
-from dateutil.relativedelta import relativedelta
 
 import functions_framework
+from arxiv_functions.exception import NoRetryError
+from arxiv_functions.utils import (
+    event_time_exceeds_retry_window,
+    get_engine_unix_socket,
+    parse_cloud_event_time,
+    set_up_cloud_logging,
+)
 from cloudevents.http import CloudEvent
-
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
-
-from config import get_config
-
 from stats_entities.site_usage import HourlyDownloads, MonthlyDownloads
 
-from stats_functions.exception import NoRetryError
-from stats_functions.utils import (
-    set_up_cloud_logging,
-    get_engine_unix_socket,
-    event_time_exceeds_retry_window,
-    parse_cloud_event_time,
-)
+from config import get_config
 
 config = get_config(os.getenv("ENV"))
 
@@ -32,10 +29,13 @@ SessionFactory = None
 
 
 def get_first_and_last_hour(month: date) -> tuple[datetime, datetime]:
-    first_hour = datetime(month.year, month.month, month.day)
+    # naive UTC, to match the naive start_dttm column in the DB
+    first_hour = datetime(month.year, month.month, month.day)  # noqa: DTZ001
     last_day = (month + relativedelta(months=1)) - relativedelta(days=1)
 
-    return first_hour, datetime(last_day.year, last_day.month, last_day.day, 23)
+    return first_hour, datetime(  # noqa: DTZ001
+        last_day.year, last_day.month, last_day.day, 23
+    )
 
 
 def get_download_count(start: datetime, end: datetime):
@@ -77,7 +77,8 @@ def validate_cloud_event(cloud_event: CloudEvent) -> date:
 def validate_month(cloud_event: CloudEvent) -> date:
     month = cloud_event.data["message"]["attributes"]["month"]
 
-    return datetime.strptime(month, "%Y-%m-%d").replace(day=1).date()
+    # naive UTC; feeds both the Date and naive DateTime columns in the DB
+    return datetime.strptime(month, "%Y-%m-%d").replace(day=1).date()  # noqa: DTZ007
 
 
 def validate_inputs(cloud_event: CloudEvent) -> date:
@@ -100,11 +101,10 @@ def validate_inputs(cloud_event: CloudEvent) -> date:
 def get_monthly_downloads(cloud_event: CloudEvent):
     global engine, SessionFactory
 
-    if config.env != "TEST":
-        if SessionFactory is None:
-            logger.info("Initializing engine and sessionmaker")
-            engine = get_engine_unix_socket(config.db)
-            SessionFactory = sessionmaker(bind=engine)
+    if config.env != "TEST" and SessionFactory is None:
+        logger.info("Initializing engine and sessionmaker")
+        engine = get_engine_unix_socket(config.db)
+        SessionFactory = sessionmaker(bind=engine)
 
     try:
         month = validate_inputs(cloud_event)

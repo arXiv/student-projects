@@ -1,7 +1,3 @@
-# Stats Functions package
-
-The stats-function package contains shared configuration and utilities that can be used with any cloud functions.
-
 # Stats Functions
 
 Other directories contain python source code for production cloud functions which collect arXiv site usage data and persist it to the `stats-db.site_usage` database. See below for a description of each. All are cron jobs implemented as GCP Cloud Functions with pubsub triggers. Trigger messages are published by GCP Scheduler Jobs. All infrastructure as code can be found in `terraform/`.

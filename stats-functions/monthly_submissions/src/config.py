@@ -1,10 +1,10 @@
-from typing import Optional
-from stats_functions.config import FunctionConfig, DatabaseConfig
+
+from arxiv_functions.config import DatabaseConfig, FunctionConfig
 
 
 class Config(FunctionConfig):
-    read_db: Optional[DatabaseConfig] = None
-    write_db: Optional[DatabaseConfig] = None
+    read_db: DatabaseConfig | None = None
+    write_db: DatabaseConfig | None = None
 
     max_event_age_in_minutes: int = 50
 

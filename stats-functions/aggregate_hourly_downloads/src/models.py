@@ -1,6 +1,6 @@
 import logging
-from typing import Set, Literal
 from datetime import datetime
+from typing import Literal
 
 from arxiv.taxonomy.category import Category
 from arxiv.taxonomy.definitions import CATEGORIES
@@ -14,7 +14,7 @@ DOWNLOAD_TYPE = Literal["pdf", "html", "src"]
 class PaperCategories:
     paper_id: str
     primary: Category
-    crosses: Set[Category]
+    crosses: set[Category]
 
     def __init__(self, id: str):
         self.paper_id = id

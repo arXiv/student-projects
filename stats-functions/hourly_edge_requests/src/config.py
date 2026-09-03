@@ -1,12 +1,15 @@
-from typing import Optional
-from stats_functions.config import DatabaseConfig, FunctionConfig
+
+from arxiv_functions.config import DatabaseConfig, FunctionConfig
+from pydantic import Field
 
 
 class Config(FunctionConfig):
-    db: Optional[DatabaseConfig] = None
+    db: DatabaseConfig | None = None
 
     max_event_age_in_minutes: int = 50
-    fastly_service_id: dict = {"arxiv.org": "umpGzwE2hXfa2aRXsOQXZ4"}
+    fastly_service_id: dict = Field(
+        default_factory=lambda: {"arxiv.org": "umpGzwE2hXfa2aRXsOQXZ4"}
+    )
     fastly_node_number: int = 0  # existing convention, corresponds to 'fastly'
     hour_delay: int = 1
 

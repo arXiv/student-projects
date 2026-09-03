@@ -1,39 +1,33 @@
-import os
 import logging
-from typing import Set, Dict, List, Tuple, Any, Union
+import os
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import functions_framework
+from arxiv.identifier import Identifier, IdentifierException
+from arxiv_functions.exception import NoRetryError
+from arxiv_functions.utils import (
+    event_time_exceeds_retry_window,
+    get_engine_unix_socket,
+    parse_cloud_event_time,
+    set_up_cloud_logging,
+)
 from cloudevents.http import CloudEvent
-
 from google.cloud import bigquery
 from google.cloud.bigquery.table import RowIterator, _EmptyRowIterator
-
 from sqlalchemy import Row
-from sqlalchemy.orm import sessionmaker, aliased
+from sqlalchemy.orm import aliased, sessionmaker
+from stats_entities.site_usage import HourlyDownloads
 
 from config import get_config
 from entities import DocumentCategory, Metadata
 from models import (
-    PaperCategories,
-    DownloadData,
-    DownloadCounts,
-    DownloadKey,
     AggregationResult,
+    DownloadCounts,
+    DownloadData,
+    DownloadKey,
+    PaperCategories,
 )
-
-from stats_entities.site_usage import HourlyDownloads
-
-from arxiv_functions.exception import NoRetryError
-from arxiv_functions.utils import (
-    set_up_cloud_logging,
-    get_engine_unix_socket,
-    event_time_exceeds_retry_window,
-    parse_cloud_event_time,
-)
-
-from arxiv.identifier import Identifier, IdentifierException
-
 
 config = get_config(os.getenv("ENV"))
 
@@ -48,9 +42,9 @@ WriteSessionFactory = None
 
 
 def process_table_rows(
-    rows: Union[RowIterator, _EmptyRowIterator],
-) -> Tuple[
-    Any, Set[str], Set[datetime], int, int
+    rows: RowIterator | _EmptyRowIterator,
+) -> tuple[
+    Any, set[str], set[datetime], int, int
 ]:  # Changed return types to accommodate generator
     """
     processes rows of data from bigquery
@@ -85,14 +79,14 @@ def process_table_rows(
             except IdentifierException:
                 counts["bad_id"] += 1
                 continue
-            except Exception:
+            except Exception:  # noqa: BLE001 - one bad row must not abort the whole batch
                 counts["problem"] += 1
                 continue
 
     return download_data_generator(), paper_ids, time_periods, counts
 
 
-def get_paper_categories(paper_ids: Set[str]) -> List[Row[Tuple[str, str, int]]]:
+def get_paper_categories(paper_ids: set[str]) -> list[Row[tuple[str, str, int]]]:
     meta = aliased(Metadata)
     dc = aliased(DocumentCategory)
 
@@ -120,10 +114,10 @@ def get_paper_categories(paper_ids: Set[str]) -> List[Row[Tuple[str, str, int]]]
 
 
 def process_paper_categories(
-    data: List[Row[Tuple[str, str, int]]],
-) -> Dict[str, PaperCategories]:
+    data: list[Row[tuple[str, str, int]]],
+) -> dict[str, PaperCategories]:
     # format paper categories into dictionary
-    paper_categories: Dict[str, PaperCategories] = {}
+    paper_categories: dict[str, PaperCategories] = {}
     for row in data:
         paper_id, cat, is_primary = row
         entry = paper_categories.setdefault(paper_id, PaperCategories(paper_id))
@@ -136,14 +130,14 @@ def process_paper_categories(
 
 
 def aggregate_data(
-    download_data: List[DownloadData],
-    paper_categories: Dict[str, PaperCategories],
-) -> Dict[DownloadKey, DownloadCounts]:
+    download_data: list[DownloadData],
+    paper_categories: dict[str, PaperCategories],
+) -> dict[DownloadKey, DownloadCounts]:
     """creates a dictionary of download counts by time, country, download type, and category
     goes through each download entry, matches it with its caegories and adds the number of downloads to the count
     """
     logger.info("Aggregating download data")
-    all_data: Dict[DownloadKey, DownloadCounts] = {}
+    all_data: dict[DownloadKey, DownloadCounts] = {}
     missing_data_count = 0
 
     for entry in download_data:
@@ -185,8 +179,8 @@ def aggregate_data(
 
 
 def insert_into_database(
-    aggregated_data: Dict[DownloadKey, DownloadCounts],
-    time_periods: Set[datetime],  # Changed to Set
+    aggregated_data: dict[DownloadKey, DownloadCounts],
+    time_periods: set[datetime],  # Changed to Set
 ) -> int:
     """adds the data from an hour of downloads into the database
     uses bulk insert and update statements to increase efficiency
@@ -222,7 +216,7 @@ def insert_into_database(
 
 
 def perform_aggregation(
-    rows: Union[RowIterator, _EmptyRowIterator],
+    rows: RowIterator | _EmptyRowIterator,
 ) -> AggregationResult:
     logger.info("Processing results of log query")
     data_gen, paper_ids, time_periods, counts = process_table_rows(rows)
@@ -383,7 +377,7 @@ def aggregate_hourly_downloads(cloud_event: CloudEvent):
         if read_engine:
             try:
                 read_engine.dispose()
-            except Exception as dispose_err:
+            except Exception as dispose_err:  # noqa: BLE001 - a dispose failure must not mask the original error
                 logger.warning(f"Failed to dispose read_engine: {dispose_err}")
             finally:
                 read_engine = None
@@ -392,11 +386,11 @@ def aggregate_hourly_downloads(cloud_event: CloudEvent):
         if write_engine:
             try:
                 write_engine.dispose()
-            except Exception as dispose_err:
+            except Exception as dispose_err:  # noqa: BLE001 - a dispose failure must not mask the original error
                 logger.warning(f"Failed to dispose write_engine: {dispose_err}")
             finally:
                 write_engine = None
                 WriteSessionFactory = None
 
         # reraise to log traceback
-        raise e
+        raise
